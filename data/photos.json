@@ -1,0 +1,92 @@
+[
+  {
+    "id": "p001",
+    "filename": "beach_sunset_01.jpg",
+    "taken_at": "2025-08-14",
+    "location": "제주 협재해변",
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p002",
+    "filename": "forest_trail_02.jpg",
+    "taken_at": "2025-10-05",
+    "location": "강원 평창",
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p003",
+    "filename": "cafe_window_03.jpg",
+    "taken_at": "2026-03-21",
+    "location": "서울 성수동",
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p004",
+    "filename": "mountain_ridge_04.jpg",
+    "taken_at": "2025-11-02",
+    "location": "강원 설악산",
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p005",
+    "filename": "city_night_05.jpg",
+    "taken_at": "2026-08-22",
+    "location": "서울 남산",
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p006",
+    "filename": "flower_field_06.jpg",
+    "taken_at": "2026-08-05",
+    "location": "경기 가평",
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p007",
+    "filename": "sea_horizon_07.jpg",
+    "taken_at": null,
+    "location": null,
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p008",
+    "filename": "old_alley_08.jpg",
+    "taken_at": null,
+    "location": null,
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p009",
+    "filename": "snow_road_09.jpg",
+    "taken_at": null,
+    "location": null,
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p010",
+    "filename": "lake_reflection_10.jpg",
+    "taken_at": null,
+    "location": null,
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  }
+]

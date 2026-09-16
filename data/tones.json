@@ -1,0 +1,28 @@
+{
+  "presets": [
+    {
+      "id": "plain",
+      "name": "담백한 사실 설명",
+      "default": true,
+      "guide": "본 것을 사실 위주로 담백하게 쓴다. 과장이나 감상 표현을 넣지 않는다."
+    },
+    {
+      "id": "emotional",
+      "name": "감성적",
+      "default": false,
+      "guide": "장면의 분위기와 감정을 부드러운 문장으로 담는다."
+    },
+    {
+      "id": "humorous",
+      "name": "유머러스",
+      "default": false,
+      "guide": "가볍고 재치 있는 어조로 쓴다. 비꼬는 표현은 쓰지 않는다."
+    }
+  ],
+  "custom": {
+    "id": "my_tone",
+    "name": "내 문체",
+    "guide": "아래 samples 의 문체를 따라 쓴다. 샘플이 비어 있으면 기본 톤으로 되돌린다.",
+    "samples": []
+  }
+}
