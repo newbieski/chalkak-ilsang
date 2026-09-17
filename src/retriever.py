@@ -9,7 +9,7 @@ from .embeddings import embed_text
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 PHOTOS_PATH = DATA_DIR / "photos.json"
 SUPPORTED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
-SEMANTIC_MATCH_THRESHOLD = 0.25
+TOP_K_SEMANTIC_RESULTS = 8
 
 
 def load_photos() -> list[dict]:
@@ -126,12 +126,15 @@ def search(
     """자연어 질의어와 태그·기간 필터로 사진을 검색한다 (키워드 + 의미 검색 하이브리드).
 
     아직 인덱싱하지 않아 태그가 비어 있는 사진은 검색 대상에서 제외한다.
-    tags(태그 필터)는 정확히 일치하는지만 본다. query(자연어 질의)는 임베딩 코사인
-    유사도를 기본 점수로 삼고, 글자 그대로 겹치는 단어가 있으면 소폭 가산해 합산 점수가
-    SEMANTIC_MATCH_THRESHOLD 이상일 때만 포함한다 — 짧은 질의("해질녘 다리")는 그
-    자체만으론 유사도가 낮게 나오는 경향이 있어 키워드 가산이 이를 보완해준다.
-    검색이 완벽하게 정밀하진 않을 수 있는데(예: "겨울"만 겹쳐도 약간 걸림), 최종적으로
-    맞는 사진인지는 에이전트가 결과를 보고 판단한다 — 검색은 후보를 넓게 잡아주는 역할.
+    tags(태그 필터)는 정확히 일치하는지만 본다. query(자연어 질의)가 있으면 임베딩
+    코사인 유사도 + 글자 그대로 겹치는 단어 가산점으로 점수를 매겨 점수 순 상위
+    TOP_K_SEMANTIC_RESULTS 건만 후보로 돌려준다.
+
+    짧은 질의("동물", "해질녘 다리")는 그 자체만으론 유사도가 낮고 들쭉날쭉해서, 고정된
+    임계값으로 자르면 질의 길이에 따라 결과가 불안정해진다(같은 의도의 질의인데 어떨 땐
+    0건, 어떨 땐 관련 없는 게 섞여 나옴). 그래서 임계값으로 자르는 대신 상위 몇 건을 항상
+    후보로 넘기고, 그중 진짜 맞는 사진인지는 에이전트가 내용을 보고 판단하게 한다 —
+    검색은 후보를 넓게 잡아주는 역할, 최종 정확성은 에이전트 몫이다.
     """
     query_vector = embed_text(query) if query else None
 
@@ -157,10 +160,9 @@ def search(
                 if token in haystack:
                     score += 0.1  # 짧은 질의의 낮은 유사도를 보완하는 가산점
 
-            if score < SEMANTIC_MATCH_THRESHOLD:
-                continue
-
         scored.append((score, photo))
 
     scored.sort(key=lambda pair: pair[0], reverse=True)
+    if query:
+        scored = scored[:TOP_K_SEMANTIC_RESULTS]
     return [photo for _, photo in scored]
