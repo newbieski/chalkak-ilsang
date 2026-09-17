@@ -13,6 +13,56 @@
 - Day 7: 평가 — `evaluation/test_queries.csv` 인-아웃 세트로 자체 평가 (아래 결과 참고)
 
 ## 아키텍처
+
+### 컴포넌트 구성도 (Logical View)
+저장소·AI·시스템(에이전트/API/UI)을 계층으로 나눈 구조도. 실선은 항상 거치는 호출, 점선은 AI(Bedrock) 호출이다.
+
+```mermaid
+flowchart TB
+    subgraph UI["사용자 인터페이스"]
+        WEB["static/index.html<br/>(웹 UI, PoC)"]
+    end
+
+    subgraph API["API 계층"]
+        FASTAPI["src/agent.py (FastAPI)<br/>POST /query · PUT /photos/* · GET /tones 등"]
+    end
+
+    subgraph AGENT["에이전트·도구 계층"]
+        LANGGRAPH["LangGraph 에이전트<br/>(create_agent, 시스템 프롬프트·가드레일)"]
+        TOOLS["src/tools.py<br/>도메인 도구 4개: index_photos·generate_caption·<br/>search_photos·get_photo"]
+    end
+
+    subgraph AI["AI 계층 — Amazon Bedrock"]
+        FALLBACK["src/model.py<br/>모델 폴백(자동 전환)"]
+        CHAT["대화 모델<br/>(Claude Sonnet/Haiku 계열)"]
+        VISION["비전 모델<br/>(이미지 인식)"]
+        EMBED["임베딩 모델<br/>(Titan Embed Text v2)"]
+    end
+
+    subgraph DATA["저장소 계층 — data/ (로컬 파일시스템)"]
+        RETRIEVER["src/retriever.py<br/>(저장소 접근 계층)"]
+        PHOTOS["photos.json<br/>메타데이터·태그·캡션·임베딩"]
+        TONES["tones.json<br/>톤 프리셋·커스텀 샘플"]
+        IMAGES["*.jpg 등 원본 이미지<br/>(git 미포함)"]
+    end
+
+    WEB --> FASTAPI
+    FASTAPI --> LANGGRAPH
+    FASTAPI --> RETRIEVER
+    LANGGRAPH --> TOOLS
+    LANGGRAPH -.추론·최종 답변 작성.-> FALLBACK
+    TOOLS -.이미지 인식.-> FALLBACK
+    RETRIEVER -.의미 검색용 임베딩.-> FALLBACK
+    FALLBACK --> CHAT
+    FALLBACK --> VISION
+    FALLBACK --> EMBED
+    TOOLS --> RETRIEVER
+    TOOLS -.읽기.-> IMAGES
+    RETRIEVER --> PHOTOS
+    RETRIEVER --> TONES
+```
+
+### 코드 호출 순서 (텍스트 다이어그램)
 ```
 사용자(웹 UI, PoC)
   └─ 사진 클릭 + 요청 문구 입력
