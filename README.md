@@ -5,7 +5,7 @@
 
 ## 활용한 패턴 (Day 1~7)
 - Day 1: LCEL chain (구조화 출력) — `POST /query` 응답을 `answer`/`contexts`/`trace` 로 구조화
-- Day 2: RAG — `retriever.py` 의 태그·텍스트 검색으로 사진을 찾음
+- Day 2: RAG — `src/embeddings.py`(Bedrock Titan Embed Text v2)로 태그·캡션을 임베딩해두고, `retriever.py`가 질의어와의 코사인 유사도(+키워드 보너스)로 의미 검색
 - Day 3: ReAct (도구 자율 선택) — `create_agent` 가 상황에 따라 4개 도구 중 필요한 것만 부름
 - Day 4: 도구 다중 결합 — 검색 → 상세조회 → 캡션생성을 한 대화 안에서 조합
 - Day 5: 가드레일 — 등록되지 않은 사진에 대해 지어내지 않기, 지정하지 않은 톤·분량 임의 변경 금지 (SERVICE.md 4번)
@@ -92,7 +92,7 @@ sequenceDiagram
 ### 데이터 저장 구조
 | 파일 | 역할 | 주요 필드 |
 |---|---|---|
-| `data/photos.json` | 사진별 메타데이터·인덱싱 결과 저장소. `retriever.py`가 유일한 읽기·쓰기 창구 | `id`, `filename`, `taken_at`/`location`(검증 안 되면 `null`), `tags`(리스트), `caption`, `caption_tone` |
+| `data/photos.json` | 사진별 메타데이터·인덱싱 결과 저장소. `retriever.py`가 유일한 읽기·쓰기 창구 | `id`, `filename`, `taken_at`/`location`(검증 안 되면 `null`), `tags`(리스트), `caption`, `caption_tone`, `embedding`(태그+캡션의 1024차원 의미 검색용 벡터) |
 | `data/tones.json` | 톤 프리셋 + 사용자 커스텀 톤 샘플 | `presets[].{id,name,guide,default}`, `custom.{id,guide,samples[]}` |
 | `data/PHOTO_CREDITS.md` | 샘플 사진 출처·라이선스 (사진 원본은 git 미포함이라 근거만 기록) | - |
 
@@ -156,5 +156,7 @@ _(진행하며 채워나감 — 자세한 경위는 PROGRESS.md 참고)_
 - `src/agent.py:104` — `POST /query` 엔드포인트
 - `src/agent.py:120` — `PUT /photos/{photo_id}/caption`: 사용자가 고친 캡션 확정 저장 (에이전트 미경유 앱 기능)
 - `src/tools.py` — `index_photos`·`generate_caption`·`search_photos`·`get_photo` 4개 도구
-- `src/retriever.py:41` — `search()`: 태그·텍스트·기간 기반 검색
+- `src/embeddings.py:17` — `embed_text()`: Bedrock Titan Embed Text v2로 텍스트를 벡터로 변환
+- `src/retriever.py:66` — `reembed()`: 태그+캡션 기반 임베딩 재계산·저장 (`index_photos`·`generate_caption`이 갱신 시점마다 호출)
+- `src/retriever.py:120` — `search()`: 키워드+의미(코사인 유사도) 하이브리드 검색
 - `static/index.html` — 데모용 정적 페이지 (사진 목록·선택·요청 입력, PoC 수준). `src/agent.py`의 `GET /`, `GET /data/*` 로 서빙됨

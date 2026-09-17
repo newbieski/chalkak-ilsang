@@ -162,6 +162,7 @@ def index_photos(photo_ids: list[str] | None = None) -> str:
         _log_usage(f"index_photos {photo['id']}", response)
         tags = [t.strip() for t in str(response.content).split(",") if t.strip()]
         retriever.update_photo(photo["id"], tags=tags)
+        retriever.reembed(photo["id"])  # 의미 검색용 임베딩 갱신
         results.append(f"{photo['id']}: {', '.join(tags)}")
 
     return "\n".join(results)
@@ -205,6 +206,7 @@ def generate_caption(photo_id: str, tone: str | None = None, length: str = "2문
     caption = str(response.content).strip()
 
     retriever.update_photo(photo_id, caption=caption, caption_tone=resolved_tone_id)
+    retriever.reembed(photo_id)  # 의미 검색용 임베딩 갱신
     return caption
 
 
