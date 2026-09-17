@@ -100,11 +100,12 @@
     </div>
   </div>
 
-  <!-- 사진을 고르지 않았을 때: 검색 등 일반 요청 -->
+  <!-- 사진을 고르지 않았을 때: 사진 검색 -->
   <div id="general">
-    <div id="selected-info">사진 없이 요청 (검색 등)</div>
+    <h2>사진 검색</h2>
+    <div id="selected-info">원하는 사진을 자연어로 설명해서 찾아보세요</div>
     <input id="question" type="text" placeholder="예: 바다 사진 보여줘" />
-    <button id="send">전송</button>
+    <button id="send">검색</button>
     <div id="result"></div>
   </div>
 
@@ -309,8 +310,20 @@ async function sendGeneralQuery() {
       body: JSON.stringify({ question: text }),
     });
     const data = await res.json();
+    const mentionedIds = [...new Set((data.answer ?? '').match(/p\d{3}/g) || [])];
+    const thumbsHtml = mentionedIds
+      .filter(id => photosById[id])
+      .map(id => `
+        <div style="display:inline-block; text-align:center; margin: 0 8px 8px 0;">
+          <img src="/data/${photosById[id].filename}" style="width:100px; height:100px; object-fit:cover; border-radius:6px; display:block;" />
+          <span style="font-size:0.7rem; color:#666;">${id}</span>
+        </div>
+      `)
+      .join('');
+
     resultEl.innerHTML = `
       <div id="answer"><strong>answer</strong><br>${data.answer ?? ''}</div>
+      ${thumbsHtml ? `<div style="margin-top:0.75rem;">${thumbsHtml}</div>` : ''}
       <p><strong>contexts</strong></p>
       <pre>${JSON.stringify(data.contexts ?? [], null, 2)}</pre>
       <p><strong>trace</strong></p>
