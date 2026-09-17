@@ -25,6 +25,7 @@
   label { display: block; margin-top: 0.75rem; font-size: 0.85rem; color: #444; }
 
   #panel { margin-top: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; }
+  #panel-photo { max-width: 100%; max-height: 320px; display: block; margin: 0 auto 0.75rem; border-radius: 8px; }
   #panel-status { font-size: 0.9rem; }
   #panel-status.done { color: #16a34a; }
   #panel-status.todo { color: #6b7280; }
@@ -66,6 +67,7 @@
 
   <!-- 사진을 고른 뒤: 요청(또는 기본값) → 생성 → 수정 → 확정 -->
   <div id="panel" hidden>
+    <img id="panel-photo" src="" alt="선택된 사진" />
     <h2 id="panel-title"></h2>
     <p id="panel-status"></p>
 
@@ -175,6 +177,7 @@ function showPanel() {
   panel.hidden = false;
 
   const photo = photosById[selectedId];
+  document.getElementById('panel-photo').src = `/data/${photo.filename}`;
   document.getElementById('panel-title').textContent = `선택된 사진: ${selectedId}`;
   const statusEl = document.getElementById('panel-status');
   const done = !!photo.caption;
