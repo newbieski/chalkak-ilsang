@@ -28,6 +28,13 @@
                       │     ├─ search_photos    ─┤     └─ src/retriever.py (data/photos.json 읽기·쓰기·검색)
                       │     └─ get_photo       ─┘
                       └─ 도구 호출 결과를 answer/contexts/trace 로 구조화해 응답
+
+[AI 호출 지점] build_chat_model() 이 만든 모델 = Bedrock 대화 모델(에이전트 추론용)
+              tools.py 의 index_photos·generate_caption = Bedrock 비전 모델(이미지 인식용)
+              retriever.py 의 reembed·search = Bedrock 임베딩 모델(의미 검색용)
+              → 전부 실제 저장소가 아니라 Bedrock API 호출이고, 결과만 아래 저장소에 남는다
+
+[저장소] data/ 폴더 (로컬 파일시스템, DB 아님) — 자세한 위치는 "데이터 저장 구조" 참고
 ```
 사진 원본 파일은 로컬에만 두고(`data/*.jpg`, git 미포함), 태그·캡션 등 메타데이터만 `data/photos.json` 에 커밋된다. 톤 프리셋·커스텀 톤 샘플은 `data/tones.json`.
 
@@ -56,28 +63,40 @@ flowchart TD
 ### 요청·데이터 흐름
 사진을 선택해 캡션을 생성·확정하는 경우의 전체 호출 경로.
 
+참여자 이름 앞의 🤖는 실제로 Bedrock을 호출하는(=AI를 쓰는) 지점이다. 나머지는 코드·저장소 로직뿐이다.
+
 ```mermaid
 sequenceDiagram
     participant U as 사용자(브라우저)
     participant W as static/index.html
     participant A as agent.py (FastAPI)
-    participant G as LangGraph 에이전트
+    participant G as 🤖 LangGraph 에이전트
     participant T as tools.py
+    participant B as 🤖 Bedrock (Converse API)
     participant R as retriever.py
-    participant D as data/photos.json
+    participant D as data/photos.json (저장소)
 
     U->>W: 사진 클릭 + 요청 입력
     W->>A: POST /query {question: "p001::담백하게 2문장"}
     A->>A: _parse_question() - photo_id 분리
     A->>G: agent.invoke(messages)
+    G->>B: [AI 호출 1] 다음에 뭘 할지 추론 (도구 자율 선택 - ReAct)
+    B-->>G: "generate_caption 호출해" (tool_call)
     G->>T: generate_caption(photo_id, tone, length)
     T->>R: find_by_id(photo_id)
     R->>D: 읽기
     D-->>R: 사진 메타데이터
-    T->>T: Bedrock 비전 모델 호출 (이미지+프롬프트, 스로틀링 시 model.py가 대체 모델로 전환)
+    T->>B: [AI 호출 2] 이미지 + 프롬프트로 캡션 요청 (비전 모델, 스로틀링 시 model.py가 대체 모델로 전환)
+    B-->>T: 캡션 텍스트
     T->>R: update_photo(caption=...) - 자동 임시 저장
     R->>D: 쓰기
+    T->>R: reembed(photo_id) - 태그+캡션으로 재임베딩
+    R->>B: [AI 호출 3] 텍스트를 벡터로 변환 (의미 검색용)
+    B-->>R: 1024차원 벡터
+    R->>D: 쓰기 (embedding 갱신)
     T-->>G: 캡션 텍스트 반환 (ToolMessage)
+    G->>B: [AI 호출 4] 도구 결과를 보고 최종 답변 문장 작성
+    B-->>G: 최종 답변
     G-->>A: 메시지 목록
     A->>A: trace/contexts/answer 조립 + 토큰 로그 출력
     A-->>W: {answer, contexts, trace}
@@ -91,7 +110,24 @@ sequenceDiagram
     W-->>U: 배지를 "완료"로 갱신
 ```
 
+이 흐름에서 **Bedrock(AI)이 실제로 관여하는 건 4곳**뿐이다 — ① 다음 행동 추론(에이전트 두뇌) ② 이미지 인식(비전 모델) ③ 임베딩(의미 검색용 벡터화) ④ 최종 답변 문장 작성. 그 외(저장·조회·태그 필터링·라우팅)는 전부 평범한 코드이지 AI 호출이 아니다.
+
 ### 데이터 저장 구조
+데이터는 별도 DB 없이 **로컬 파일시스템의 `data/` 폴더**에 그대로 저장된다.
+
+```mermaid
+flowchart LR
+    subgraph FS["로컬 파일시스템: data/ (실제 저장 위치)"]
+        P["photos.json<br/>메타데이터·태그·캡션·임베딩"]
+        TN["tones.json<br/>톤 프리셋·커스텀 샘플"]
+        CR["PHOTO_CREDITS.md<br/>출처·라이선스"]
+        IMG["*.jpg 등 사진 원본<br/>(git 미포함, 로컬 전용)"]
+    end
+    RT["src/retriever.py"] -->|읽기·쓰기| P
+    TL["src/tools.py"] -->|읽기·쓰기| TN
+    TL -->|읽기| IMG
+```
+
 | 파일 | 역할 | 주요 필드 |
 |---|---|---|
 | `data/photos.json` | 사진별 메타데이터·인덱싱 결과 저장소. `retriever.py`가 유일한 읽기·쓰기 창구 | `id`, `filename`, `taken_at`/`location`(검증 안 되면 `null`), `tags`(리스트), `caption`, `caption_tone`, `embedding`(태그+캡션의 1024차원 의미 검색용 벡터) |
