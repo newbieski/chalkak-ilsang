@@ -98,6 +98,8 @@ sequenceDiagram
 
 `retriever.py`의 `load_photos`/`save_photos`/`update_photo`가 파일 전체를 읽고 다시 쓰는 방식이라(원자적 트랜잭션 아님), 여러 요청이 동시에 같은 사진을 고치는 상황은 고려하지 않았다 (PoC 범위).
 
+**벡터 저장 방식과 규모 한계**: `embedding`은 별도 벡터 DB 없이 `photos.json` 안에 배열로 그대로 저장하고, `search()`가 매번 전체를 순회하며 코사인 유사도를 브루트포스로 계산한다 (사진 수십 장 규모에서는 충분히 빠름). 사진이 수천~수만 장 이상으로 늘어나면 이 방식은 느려지므로, 그때는 FAISS·Chroma 같은 로컬 벡터 인덱스나 Pinecone·OpenSearch(벡터 엔진) 같은 관리형 벡터 DB로 옮기는 게 맞다 — 임베딩을 별도 저장소로 옮기고 `photos.json`은 ID로 그 저장소를 가리키기만 하면 된다.
+
 ### 응답 출력 형식
 `POST /query`는 항상 아래 세 키만 돌려준다 (CLAUDE.md 제출 규약).
 ```json
