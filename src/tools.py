@@ -2,26 +2,31 @@
 
 import base64
 import json
-import os
 from pathlib import Path
 
 from botocore.exceptions import ClientError
-from langchain_aws import ChatBedrockConverse
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
 
 from . import retriever
+from .model import build_chat_model
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 TONES_PATH = DATA_DIR / "tones.json"
 
 
-def _vision_model() -> ChatBedrockConverse:
-    """이미지를 보는 도구들이 공용으로 쓰는 Bedrock 모델을 만든다."""
-    return ChatBedrockConverse(
-        model=os.environ["BEDROCK_MODEL_ID"],
-        region_name=os.environ.get("AWS_REGION", "us-east-1"),
-        temperature=0,
+def _vision_model():
+    """이미지를 보는 도구들이 공용으로 쓰는 Bedrock 모델을 만든다. 스로틀링 시 대체 모델로 자동 전환."""
+    return build_chat_model(temperature=0)
+
+
+def _log_usage(label: str, response) -> None:
+    """모델 호출 하나의 입출력 토큰 수와 실제로 응답한 모델을 콘솔에 남긴다."""
+    usage = response.usage_metadata or {}
+    model_name = (response.response_metadata or {}).get("model_name", "?")
+    print(
+        f"[tokens] {label} model={model_name} "
+        f"input={usage.get('input_tokens', 0)} output={usage.get('output_tokens', 0)}"
     )
 
 
@@ -37,23 +42,34 @@ def _default_tone_guide(tones: dict) -> str:
     return preset["guide"]
 
 
-def _tone_guide(tone: str | None) -> str:
-    """톤 이름(프리셋 id 또는 커스텀 톤 id)에 맞는 안내 문장을 반환한다.
+def _tone_guide(tone: str | None) -> tuple[str, str]:
+    """톤 이름(프리셋 id·이름 또는 커스텀 톤 id·이름)에 맞는 (안내 문장, 실제 적용된 톤 id)를 반환한다.
 
     지정하지 않았거나 모르는 톤이면 기본 톤으로 되돌린다
     (SERVICE.md 4번: 사용자가 지정하지 않은 톤을 임의로 바꾸지 않는다).
     """
     tones = _load_tones()
+    default_id = next(p["id"] for p in tones["presets"] if p["default"])
     if not tone:
-        return _default_tone_guide(tones)
+        return _default_tone_guide(tones), default_id
+
+    # 에이전트가 프리셋 id("emotional") 대신 한국어 이름을 어미까지 붙여
+    # ("감성적", "감성적인", "감성적으로") 넘기는 경우가 많아, 정확히 일치하지 않아도
+    # id·name 이 서로 부분 문자열로 포함되면 매칭한다.
+    normalized = tone.strip().lower()
+
+    def _matches(id_: str, name: str) -> bool:
+        id_, name = id_.lower(), name.strip().lower()
+        return normalized == id_ or name in normalized or normalized in name
+
     for preset in tones["presets"]:
-        if preset["id"] == tone:
-            return preset["guide"]
+        if _matches(preset["id"], preset["name"]):
+            return preset["guide"], preset["id"]
     custom = tones["custom"]
-    if tone == custom["id"] and custom["samples"]:
+    if _matches(custom["id"], custom["name"]) and custom["samples"]:
         samples = "\n".join(custom["samples"])
-        return f"{custom['guide']}\n샘플:\n{samples}"
-    return _default_tone_guide(tones)
+        return f"{custom['guide']}\n샘플:\n{samples}", custom["id"]
+    return _default_tone_guide(tones), default_id
 
 
 def _image_to_data_url(filename: str) -> str | None:
@@ -92,14 +108,19 @@ def index_photos(photo_ids: list[str] | None = None) -> str:
             results.append(f"{photo['id']}: 이미지 파일이 없어 건너뜀")
             continue
 
+        context = f"촬영일: {photo.get('taken_at') or '알 수 없음'}, 장소: {photo.get('location') or '알 수 없음'}"
         message = HumanMessage(
             content=[
                 {
                     "type": "text",
                     "text": (
-                        "이 사진에 어울리는 일반적인 사물·활동·분위기 태그를 5개 이내 한국어 단어로 뽑아줘. "
-                        "'공원', '바다', '조깅'처럼 일반적인 표현만 쓰고, 지명이나 장소 고유명사는 절대 넣지 마. "
-                        "쉼표로만 구분해서 태그만 답해. 확신이 낮은 태그는 뒤에 (추정)을 붙여줘."
+                        "이 사진에서 실제로 확인되는 것만 태그로 뽑아줘. 이미지에 없는 사실은 지어내지 마. "
+                        "사물·활동·분위기 위주로 5개 이내 한국어 단어로 뽑아줘. "
+                        "지명·장소·건물 같은 고유명사는 아래 참고 정보(메타데이터)로 확인됐거나, "
+                        "누가 봐도 알아볼 만큼 명백한 유명 랜드마크일 때만 써도 되고, "
+                        "그 정도로 확실하지 않으면 '공원', '바다'처럼 일반적인 표현으로만 써. "
+                        "쉼표로만 구분해서 태그만 답해. 확신이 낮은 태그는 뒤에 (추정)을 붙여줘. "
+                        f"참고 정보 — {context}"
                     ),
                 },
                 {"type": "image_url", "image_url": {"url": data_url}},
@@ -116,6 +137,7 @@ def index_photos(photo_ids: list[str] | None = None) -> str:
             results.append(f"{photo['id']}: 태그 생성 실패 ({error_code or exc})")
             continue
 
+        _log_usage(f"index_photos {photo['id']}", response)
         tags = [t.strip() for t in str(response.content).split(",") if t.strip()]
         retriever.update_photo(photo["id"], tags=tags)
         results.append(f"{photo['id']}: {', '.join(tags)}")
@@ -139,7 +161,7 @@ def generate_caption(photo_id: str, tone: str | None = None, length: str = "2문
     if data_url is None:
         return f"{photo_id} 사진 파일을 찾을 수 없어 캡션을 만들 수 없습니다."
 
-    tone_guide = _tone_guide(tone)
+    tone_guide, resolved_tone_id = _tone_guide(tone)
     context = f"촬영일: {photo.get('taken_at') or '알 수 없음'}, 장소: {photo.get('location') or '알 수 없음'}"
     guide_line = f"\n추가 가이드: {guide}" if guide else ""
     message = HumanMessage(
@@ -155,9 +177,10 @@ def generate_caption(photo_id: str, tone: str | None = None, length: str = "2문
         ]
     )
     response = _vision_model().invoke([message])
+    _log_usage(f"generate_caption {photo_id}", response)
     caption = str(response.content).strip()
 
-    retriever.update_photo(photo_id, caption=caption, caption_tone=tone or "plain")
+    retriever.update_photo(photo_id, caption=caption, caption_tone=resolved_tone_id)
     return caption
 
 

@@ -6,78 +6,257 @@
 <style>
   body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
   h1 { font-size: 1.3rem; }
+  h2 { font-size: 1.05rem; margin-bottom: 0.25rem; }
   #photos { display: flex; flex-wrap: wrap; gap: 8px; margin: 1rem 0; }
-  #photos img { width: 110px; height: 110px; object-fit: cover; border: 3px solid transparent; border-radius: 6px; cursor: pointer; }
-  #photos img.selected { border-color: #2563eb; }
-  #photos .id-label { font-size: 0.7rem; text-align: center; color: #666; }
-  .photo-item { text-align: center; }
-  #question { width: 100%; padding: 0.5rem; font-size: 1rem; box-sizing: border-box; }
+  .photo-item { text-align: center; position: relative; width: 110px; }
+  .photo-item img { width: 110px; height: 110px; object-fit: cover; border: 3px solid transparent; border-radius: 6px; cursor: pointer; display: block; }
+  .photo-item img.selected { border-color: #2563eb; }
+  .photo-item .badge {
+    position: absolute; top: 4px; right: 4px; font-size: 0.7rem; padding: 1px 6px;
+    border-radius: 10px; color: #fff;
+  }
+  .badge.done { background: #16a34a; }
+  .badge.todo { background: #9ca3af; }
+  .id-label { font-size: 0.7rem; color: #666; }
+
+  input[type="text"], textarea { width: 100%; padding: 0.5rem; font-size: 1rem; box-sizing: border-box; font-family: inherit; }
+  textarea { resize: vertical; }
   button { padding: 0.5rem 1rem; margin-top: 0.5rem; cursor: pointer; }
+  label { display: block; margin-top: 0.75rem; font-size: 0.85rem; color: #444; }
+
+  #panel { margin-top: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; }
+  #panel-status { font-size: 0.9rem; }
+  #panel-status.done { color: #16a34a; }
+  #panel-status.todo { color: #6b7280; }
+  #panel-msg { font-size: 0.85rem; color: #2563eb; min-height: 1.2em; }
+  #deselect { background: none; border: 1px solid #ccc; }
+
+  #tags-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.4rem; min-height: 1.6rem; }
+  .tag-chip {
+    display: inline-flex; align-items: center; gap: 4px; background: #e0e7ff; color: #3730a3;
+    border-radius: 12px; padding: 2px 8px 2px 10px; font-size: 0.85rem;
+  }
+  .tag-chip button { margin: 0; padding: 0 2px; background: none; border: none; color: #3730a3; font-weight: bold; cursor: pointer; }
+  .tag-add-row { display: flex; gap: 6px; margin-top: 0.4rem; }
+  .tag-add-row input { flex: 1; }
+  .tag-add-row button { margin-top: 0; white-space: nowrap; }
+
+  #general { margin-top: 1.5rem; }
   #selected-info { color: #2563eb; font-size: 0.9rem; min-height: 1.2em; }
-  #result { margin-top: 1.5rem; }
+  #result { margin-top: 1rem; }
   #result pre { background: #f5f5f5; padding: 0.75rem; border-radius: 6px; white-space: pre-wrap; word-break: break-word; }
   #answer { font-size: 1.05rem; padding: 0.75rem; background: #eef6ff; border-radius: 6px; }
 </style>
 </head>
 <body>
   <h1>찰칵일상 · 데모 (PoC)</h1>
-  <p>사진을 클릭해서 고른 뒤(선택 안 해도 됨), 요청을 적고 전송하세요.</p>
+  <p>사진을 클릭하면 문장(캡션) 생성·수정 화면이 뜹니다. 초록 배지는 이미 문장이 있는 사진입니다.</p>
 
   <div id="photos">불러오는 중...</div>
-  <div id="selected-info"></div>
 
-  <input id="question" type="text" placeholder="예: 담백하게 2문장으로 써줘 / 바다 사진 보여줘" />
-  <button id="send">전송</button>
+  <!-- 사진을 고른 뒤: 요청(또는 기본값) → 생성 → 수정 → 확정 -->
+  <div id="panel" hidden>
+    <h2 id="panel-title"></h2>
+    <p id="panel-status"></p>
 
-  <div id="result"></div>
+    <label>태그</label>
+    <div id="tags-list"></div>
+    <div class="tag-add-row">
+      <input id="new-tag" type="text" placeholder="태그 추가 후 Enter" />
+      <button id="add-tag">추가</button>
+    </div>
+
+    <label>생성 요청 (제시된 문구를 그대로 쓰거나 원하는 대로 고쳐서 사용)</label>
+    <input id="guide" type="text" />
+    <button id="generate">문장 생성</button>
+
+    <label>캡션 (직접 수정 가능)</label>
+    <textarea id="caption-box" rows="4" placeholder="아직 생성된 문장이 없습니다."></textarea>
+    <button id="confirm">확정</button>
+    <button id="deselect">사진 선택 해제</button>
+    <p id="panel-msg"></p>
+  </div>
+
+  <!-- 사진을 고르지 않았을 때: 검색 등 일반 요청 -->
+  <div id="general">
+    <div id="selected-info">사진 없이 요청 (검색 등)</div>
+    <input id="question" type="text" placeholder="예: 바다 사진 보여줘" />
+    <button id="send">전송</button>
+    <div id="result"></div>
+  </div>
 
 <script>
+let photosById = {};
 let selectedId = null;
+const DEFAULT_GUIDE = '2문장으로, 담백한 사실 설명 톤으로 써줘';
 
 async function loadPhotos() {
   const res = await fetch('/data/photos.json');
   const photos = await res.json();
+  photosById = Object.fromEntries(photos.map(p => [p.id, p]));
+  renderPhotos();
+}
+
+function renderPhotos() {
   const container = document.getElementById('photos');
   container.innerHTML = '';
-  photos.forEach(p => {
+  Object.values(photosById).forEach(p => {
     const wrap = document.createElement('div');
     wrap.className = 'photo-item';
+
     const img = document.createElement('img');
     img.src = `/data/${p.filename}`;
-    img.dataset.id = p.id;
-    img.onclick = () => selectPhoto(p.id, img);
+    if (p.id === selectedId) img.classList.add('selected');
+    img.onclick = () => selectPhoto(p.id);
+
+    const badge = document.createElement('span');
+    const done = !!p.caption;
+    badge.className = 'badge ' + (done ? 'done' : 'todo');
+    badge.textContent = done ? '완료' : '미작업';
+
     const label = document.createElement('div');
     label.className = 'id-label';
     label.textContent = p.id;
+
     wrap.appendChild(img);
+    wrap.appendChild(badge);
     wrap.appendChild(label);
     container.appendChild(wrap);
   });
 }
 
-function selectPhoto(id, imgEl) {
-  if (selectedId === id) {
-    // 같은 사진 다시 클릭하면 선택 해제
-    selectedId = null;
-    imgEl.classList.remove('selected');
-  } else {
-    document.querySelectorAll('#photos img').forEach(el => el.classList.remove('selected'));
-    selectedId = id;
-    imgEl.classList.add('selected');
+function selectPhoto(id) {
+  selectedId = id;
+  renderPhotos();
+  showPanel();
+}
+
+function showPanel() {
+  document.getElementById('general').hidden = true;
+  const panel = document.getElementById('panel');
+  panel.hidden = false;
+
+  const photo = photosById[selectedId];
+  document.getElementById('panel-title').textContent = `선택된 사진: ${selectedId}`;
+  const statusEl = document.getElementById('panel-status');
+  const done = !!photo.caption;
+  statusEl.textContent = done ? '이미 문장이 생성된 사진입니다 (다시 생성하거나 바로 고칠 수 있습니다)' : '아직 문장을 생성하지 않은 사진입니다';
+  statusEl.className = done ? 'done' : 'todo';
+
+  document.getElementById('guide').value = DEFAULT_GUIDE;
+  document.getElementById('caption-box').value = photo.caption || '';
+  document.getElementById('panel-msg').textContent = '';
+  document.getElementById('new-tag').value = '';
+  renderTags();
+}
+
+function renderTags() {
+  const photo = photosById[selectedId];
+  const container = document.getElementById('tags-list');
+  container.innerHTML = '';
+  (photo.tags || []).forEach(tag => {
+    const chip = document.createElement('span');
+    chip.className = 'tag-chip';
+    const text = document.createElement('span');
+    text.textContent = tag;
+    const removeBtn = document.createElement('button');
+    removeBtn.textContent = '×';
+    removeBtn.onclick = () => removeTag(tag);
+    chip.appendChild(text);
+    chip.appendChild(removeBtn);
+    container.appendChild(chip);
+  });
+  if (!(photo.tags || []).length) {
+    container.innerHTML = '<span style="color:#9ca3af; font-size:0.85rem;">태그 없음</span>';
   }
-  updateSelectedInfo();
 }
 
-function updateSelectedInfo() {
-  document.getElementById('selected-info').textContent = selectedId
-    ? `선택된 사진: ${selectedId}`
-    : '선택된 사진 없음 (검색 등 사진 지정이 필요 없는 요청에 사용)';
+async function saveTags(tags) {
+  const msgEl = document.getElementById('panel-msg');
+  try {
+    const res = await fetch(`/photos/${selectedId}/tags`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tags }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const updated = await res.json();
+    photosById[selectedId] = updated;
+    renderTags();
+  } catch (err) {
+    msgEl.textContent = `태그 저장 실패: ${err}`;
+  }
 }
 
-async function send() {
+function addTag() {
+  const input = document.getElementById('new-tag');
+  const value = input.value.trim();
+  if (!value) return;
+  const photo = photosById[selectedId];
+  const tags = photo.tags || [];
+  if (tags.includes(value)) { input.value = ''; return; }
+  saveTags([...tags, value]);
+  input.value = '';
+}
+
+function removeTag(tag) {
+  const photo = photosById[selectedId];
+  const tags = (photo.tags || []).filter(t => t !== tag);
+  saveTags(tags);
+}
+
+function deselect() {
+  selectedId = null;
+  document.getElementById('panel').hidden = true;
+  document.getElementById('general').hidden = false;
+  renderPhotos();
+}
+
+async function generateCaption() {
+  const guide = document.getElementById('guide').value.trim();
+  const request = guide || DEFAULT_GUIDE;
+  const msgEl = document.getElementById('panel-msg');
+  msgEl.textContent = '생성 중...';
+
+  try {
+    const res = await fetch('/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: `${selectedId}::${request}` }),
+    });
+    const data = await res.json();
+    document.getElementById('caption-box').value = data.answer ?? '';
+    msgEl.textContent = '생성됨 — 내용을 확인·수정한 뒤 확정을 눌러주세요 (아직 저장 전입니다)';
+  } catch (err) {
+    msgEl.textContent = `생성 실패: ${err}`;
+  }
+}
+
+async function confirmCaption() {
+  const caption = document.getElementById('caption-box').value;
+  const msgEl = document.getElementById('panel-msg');
+  msgEl.textContent = '저장 중...';
+
+  try {
+    const res = await fetch(`/photos/${selectedId}/caption`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ caption }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const updated = await res.json();
+    photosById[selectedId] = updated;
+    msgEl.textContent = '확정 저장됨';
+    renderPhotos();
+    showPanel();
+  } catch (err) {
+    msgEl.textContent = `저장 실패: ${err}`;
+  }
+}
+
+async function sendGeneralQuery() {
   const text = document.getElementById('question').value.trim();
   if (!text) return;
-  const question = selectedId ? `${selectedId}::${text}` : text;
 
   const resultEl = document.getElementById('result');
   resultEl.innerHTML = '<p>요청 중...</p>';
@@ -86,7 +265,7 @@ async function send() {
     const res = await fetch('/query', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({ question: text }),
     });
     const data = await res.json();
     resultEl.innerHTML = `
@@ -101,9 +280,16 @@ async function send() {
   }
 }
 
-document.getElementById('send').addEventListener('click', send);
+document.getElementById('generate').addEventListener('click', generateCaption);
+document.getElementById('confirm').addEventListener('click', confirmCaption);
+document.getElementById('deselect').addEventListener('click', deselect);
+document.getElementById('add-tag').addEventListener('click', addTag);
+document.getElementById('new-tag').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addTag();
+});
+document.getElementById('send').addEventListener('click', sendGeneralQuery);
 document.getElementById('question').addEventListener('keydown', e => {
-  if (e.key === 'Enter') send();
+  if (e.key === 'Enter') sendGeneralQuery();
 });
 
 loadPhotos();
