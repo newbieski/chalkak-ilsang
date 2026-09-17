@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 from . import retriever
 from .model import build_chat_model
-from .tools import generate_caption, get_photo, index_photos, search_photos
+from .tools import generate_caption, get_photo, index_photos, load_tones, search_photos, update_custom_tone_samples
 
 load_dotenv()
 
@@ -147,6 +147,34 @@ def update_tags(photo_id: str, request: TagsUpdateRequest) -> dict:
     if photo is None:
         raise HTTPException(status_code=404, detail=f"{photo_id} 사진을 찾을 수 없습니다.")
     return photo
+
+
+@app.post("/photos/sync")
+def sync_photos() -> list[dict]:
+    """`data/` 폴더에 새로 추가된 사진 파일을 찾아 photos.json 에 등록한다.
+
+    업로드 기능이 없어 사용자가 파일을 폴더에 직접 넣는 지금 단계의 임시 대체 기능.
+    """
+    return retriever.sync_new_photos()
+
+
+@app.get("/tones")
+def get_tones() -> dict:
+    """톤 프리셋과 커스텀 톤 샘플 목록을 반환한다 (UI 표시용)."""
+    return load_tones()
+
+
+class CustomToneRequest(BaseModel):
+    samples: list[str]
+
+
+@app.put("/tones/custom")
+def update_custom_tone(request: CustomToneRequest) -> dict:
+    """사용자가 등록한 커스텀 톤(내 문체) 글 샘플을 저장한다.
+
+    에이전트(모델)를 거치지 않는 앱 기능이다 (SERVICE.md 3번 참고).
+    """
+    return update_custom_tone_samples(request.samples)
 
 
 if __name__ == "__main__":

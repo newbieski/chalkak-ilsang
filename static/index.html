@@ -41,6 +41,13 @@
   .tag-add-row input { flex: 1; }
   .tag-add-row button { margin-top: 0; white-space: nowrap; }
 
+  #tone-section { margin-top: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; }
+  #tone-samples-list { margin-top: 0.4rem; }
+  .tone-sample-row { display: flex; align-items: flex-start; gap: 6px; padding: 6px 0; border-bottom: 1px solid #e5e7eb; }
+  .tone-sample-row span { flex: 1; font-size: 0.9rem; }
+  .tone-sample-row button { margin: 0; background: none; border: none; color: #dc2626; cursor: pointer; font-size: 0.85rem; }
+  #tone-section p.hint { font-size: 0.85rem; color: #555; margin: 0.25rem 0 0; }
+
   #general { margin-top: 1.5rem; }
   #selected-info { color: #2563eb; font-size: 0.9rem; min-height: 1.2em; }
   #result { margin-top: 1rem; }
@@ -51,6 +58,9 @@
 <body>
   <h1>찰칵일상 · 데모 (PoC)</h1>
   <p>사진을 클릭하면 문장(캡션) 생성·수정 화면이 뜹니다. 초록 배지는 이미 문장이 있는 사진입니다.</p>
+
+  <button id="sync-photos">새 사진 불러오기</button>
+  <span id="sync-msg" style="font-size:0.85rem; color:#2563eb; margin-left:8px;"></span>
 
   <div id="photos">불러오는 중...</div>
 
@@ -77,6 +87,17 @@
     <p id="panel-msg"></p>
   </div>
 
+  <!-- 커스텀 톤(내 문체) 등록 — 사진 선택과 무관한 전역 설정 -->
+  <div id="tone-section">
+    <h2>내 문체 등록</h2>
+    <p class="hint">평소 쓰는 글 샘플을 등록해두면, 캡션 생성 요청 시 "내가 등록한 톤으로"라고 말해서 그 문체로 받을 수 있습니다.</p>
+    <div id="tone-samples-list"></div>
+    <div class="tag-add-row">
+      <input id="new-tone-sample" type="text" placeholder="본인 글 샘플 한 문장 입력 후 Enter" />
+      <button id="add-tone-sample">추가</button>
+    </div>
+  </div>
+
   <!-- 사진을 고르지 않았을 때: 검색 등 일반 요청 -->
   <div id="general">
     <div id="selected-info">사진 없이 요청 (검색 등)</div>
@@ -95,6 +116,23 @@ async function loadPhotos() {
   const photos = await res.json();
   photosById = Object.fromEntries(photos.map(p => [p.id, p]));
   renderPhotos();
+}
+
+async function syncPhotos() {
+  const msgEl = document.getElementById('sync-msg');
+  msgEl.textContent = '확인 중...';
+  try {
+    const res = await fetch('/photos/sync', { method: 'POST' });
+    const added = await res.json();
+    if (added.length) {
+      msgEl.textContent = `${added.length}장 새로 등록됨: ${added.map(p => p.id).join(', ')}`;
+    } else {
+      msgEl.textContent = '새로 등록할 사진 없음';
+    }
+    await loadPhotos();
+  } catch (err) {
+    msgEl.textContent = `실패: ${err}`;
+  }
 }
 
 function renderPhotos() {
@@ -292,7 +330,69 @@ document.getElementById('question').addEventListener('keydown', e => {
   if (e.key === 'Enter') sendGeneralQuery();
 });
 
+let toneSamples = [];
+
+async function loadTones() {
+  const res = await fetch('/tones');
+  const tones = await res.json();
+  toneSamples = tones.custom.samples || [];
+  renderToneSamples();
+}
+
+function renderToneSamples() {
+  const container = document.getElementById('tone-samples-list');
+  container.innerHTML = '';
+  if (!toneSamples.length) {
+    container.innerHTML = '<span style="color:#9ca3af; font-size:0.85rem;">등록된 샘플 없음 — 등록 전까지는 기본 톤으로 처리됩니다.</span>';
+    return;
+  }
+  toneSamples.forEach((sample, idx) => {
+    const row = document.createElement('div');
+    row.className = 'tone-sample-row';
+    const text = document.createElement('span');
+    text.textContent = sample;
+    const removeBtn = document.createElement('button');
+    removeBtn.textContent = '삭제';
+    removeBtn.onclick = () => removeToneSample(idx);
+    row.appendChild(text);
+    row.appendChild(removeBtn);
+    container.appendChild(row);
+  });
+}
+
+async function saveToneSamples() {
+  const res = await fetch('/tones/custom', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ samples: toneSamples }),
+  });
+  const tones = await res.json();
+  toneSamples = tones.custom.samples || [];
+  renderToneSamples();
+}
+
+function addToneSample() {
+  const input = document.getElementById('new-tone-sample');
+  const value = input.value.trim();
+  if (!value) return;
+  toneSamples = [...toneSamples, value];
+  input.value = '';
+  saveToneSamples();
+}
+
+function removeToneSample(idx) {
+  toneSamples = toneSamples.filter((_, i) => i !== idx);
+  saveToneSamples();
+}
+
+document.getElementById('add-tone-sample').addEventListener('click', addToneSample);
+document.getElementById('new-tone-sample').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addToneSample();
+});
+document.getElementById('sync-photos').addEventListener('click', syncPhotos);
+
 loadPhotos();
+loadTones();
 </script>
 </body>
 </html>

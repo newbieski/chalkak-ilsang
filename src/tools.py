@@ -36,6 +36,28 @@ def _load_tones() -> dict:
         return json.load(f)
 
 
+def _save_tones(tones: dict) -> None:
+    """톤 프리셋·커스텀 톤 정보를 tones.json 에 다시 저장한다."""
+    with open(TONES_PATH, "w", encoding="utf-8") as f:
+        json.dump(tones, f, ensure_ascii=False, indent=2)
+
+
+def load_tones() -> dict:
+    """톤 프리셋·커스텀 톤 정보를 반환한다 (앱이 현재 상태를 보여줄 때 사용)."""
+    return _load_tones()
+
+
+def update_custom_tone_samples(samples: list[str]) -> dict:
+    """사용자가 등록한 커스텀 톤 글 샘플을 저장한다.
+
+    에이전트(모델)를 거치지 않는 앱 기능이다 (SERVICE.md 3번 참고).
+    """
+    tones = _load_tones()
+    tones["custom"]["samples"] = samples
+    _save_tones(tones)
+    return tones
+
+
 def _default_tone_guide(tones: dict) -> str:
     """기본 톤(프리셋 중 default=true)의 안내 문장을 반환한다."""
     preset = next(p for p in tones["presets"] if p["default"])

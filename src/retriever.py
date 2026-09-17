@@ -5,6 +5,7 @@ from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 PHOTOS_PATH = DATA_DIR / "photos.json"
+SUPPORTED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 
 def load_photos() -> list[dict]:
@@ -36,6 +37,46 @@ def update_photo(photo_id: str, **fields) -> dict | None:
             save_photos(photos)
             return photo
     return None
+
+
+def sync_new_photos() -> list[dict]:
+    """`data/` 밑에 있지만 photos.json 에 등록 안 된 이미지 파일을 찾아 최소 항목으로 등록한다.
+
+    업로드 기능이 없는 지금은 사용자가 파일을 폴더에 직접 넣는 방식이라, photos.json 을
+    손으로 고치지 않아도 목록에 뜨도록 하기 위한 것. 새로 등록된 항목만 반환한다.
+    """
+    photos = load_photos()
+    known_filenames = {p["filename"] for p in photos}
+
+    max_num = 0
+    for photo in photos:
+        pid = photo["id"]
+        if pid.startswith("p") and pid[1:].isdigit():
+            max_num = max(max_num, int(pid[1:]))
+
+    new_entries = []
+    for path in sorted(DATA_DIR.iterdir()):
+        if path.suffix.lower() not in SUPPORTED_IMAGE_EXTENSIONS:
+            continue
+        if path.name in known_filenames:
+            continue
+        max_num += 1
+        new_entries.append(
+            {
+                "id": f"p{max_num:03d}",
+                "filename": path.name,
+                "taken_at": None,
+                "location": None,
+                "tags": [],
+                "caption": None,
+                "caption_tone": None,
+            }
+        )
+
+    if new_entries:
+        photos.extend(new_entries)
+        save_photos(photos)
+    return new_entries
 
 
 def search(
