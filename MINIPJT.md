@@ -22,10 +22,10 @@
 - [ ] Day 종료 15분 전 강사에게 진도 공유 (SERVICE.md·CSV 완성 확인)
 
 ### Day 9 · 개발
-- [ ] 실제 개발 (에이전트·도구·RAG·가드레일·트레이스 붙이기)
-- [ ] MCP 연동 (선택)
-- [ ] test_queries.csv로 자체 평가 반복 (LLM-as-Judge·RAGAS 지표 산출) · 개선 사이클
-- [ ] `evaluation/round1_report.md` 저장
+- [x] 실제 개발 (에이전트·도구·RAG·가드레일·트레이스 붙이기) — 구현 완료, 실제 Bedrock 호출 검증은 계정 하루 한도로 대기 중 (자세한 내용은 DEVPLAN.md·PROGRESS.md)
+- [ ] MCP 연동 (선택) — 미정, 생략 쪽으로 기울어 있음
+- [ ] test_queries.csv로 자체 평가 반복 (LLM-as-Judge·RAGAS 지표 산출) · 개선 사이클 — 채점 스크립트(`evaluation/run_eval.py`)는 완성, 실행은 Bedrock 한도 풀려야 가능
+- [ ] `evaluation/round1_report.md` 저장 — 위와 같은 이유로 대기
 - [ ] 강사 1:1 순회 리뷰 (인당 5~10분)
 
 ### Day 10 · 마감·제출·랩업

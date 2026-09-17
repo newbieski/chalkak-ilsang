@@ -25,15 +25,17 @@
 - 대신 트랙 B(`generate_caption`, `search_photos`)를 안정화하는 데 더 공을 들인다
 - `test_queries.csv` 통과율은 트랙 B가 안정된 뒤에 확인한다 (자세한 배경은 PROGRESS.md Day9 강사 리뷰 참고)
 
-## 오늘 진행 순서 (제안)
-1. 실제 사진 파일 확보 → `data/`에 배치
-2. 트랙 A: `retriever.py`, `index_photos` 구현 → 실행해서 `data/photos.json` 태그 채움
-3. 트랙 B: `generate_caption` → `search_photos` → `get_photo` 구현
-4. `agent.py`: 4개 도구를 묶는 에이전트 그래프 + 가드레일 + trace
-5. `test_queries.csv` 20건으로 자체 평가 → 실패 문항 하나씩 고치는 반복 → `evaluation/round1_report.md`
+## 오늘 진행 순서 (Day9 진행 상황)
+1. ✅ 실제 사진 파일 확보 → `data/`에 배치 — 30장(위키미디어 공용, 라이선스 확인됨)
+2. ⏳ 트랙 A: `retriever.py`, `index_photos` 구현 완료 · **실행은 p001 1건만 성공, 나머지 29장은 Bedrock 계정 하루 한도로 대기 중**
+3. ✅ 트랙 B: `generate_caption` → `search_photos` → `get_photo` 구현 완료 (실제 호출 검증은 Bedrock 한도 풀려야 가능)
+4. ✅ `agent.py`: 4개 도구를 묶는 에이전트 그래프 + 가드레일 + trace + `POST /query` 구현 완료. mock 모델로 메시지 조립 로직(trace/contexts/answer)까지는 검증됨
+5. ⏳ `test_queries.csv` 20건 자체 평가 → `evaluation/run_eval.py` 채점 스크립트는 완성, **실행은 Bedrock 한도 풀려야 가능**
+6. ✅ (계획에 없었지만 추가) `static/index.html` PoC 데모 페이지 + `GET /`, `GET /data/*` 정적 서빙
 
-## 열린 질문 (아직 안 정함)
-- 사진 실제 파일 10장 확보 여부 (PROGRESS.md Day8 "남은 것" 참고)
-- UI에서 고른 사진 ID를 `POST /query`의 `question` 문자열에 어떻게 실어 보낼지
-- `index_photos`가 캡션까지 미리 만들어 둘지, 캡션은 `generate_caption` 요청 시점에만 만들지
-- MCP 연동 여부 (12개 패턴 중 5번, 선택사항)
+## 열린 질문
+- ~~사진 실제 파일 10장 확보 여부~~ → 해결: 30장, 위키미디어 공용 라이선스 확인(`data/PHOTO_CREDITS.md`)
+- ~~UI에서 고른 사진 ID를 `question`에 어떻게 실을지~~ → 해결: `photo_id::요청` 구분자 형식, `static/index.html`에 구현
+- ~~`index_photos`가 캡션까지 미리 만들지~~ → 해결: 태그만 채우고, 캡션은 `generate_caption` 요청 시점에만 생성
+- **MCP 연동 여부** (12개 패턴 중 5번, 선택) — 아직 미정. 남은 시간·토큰(Bedrock 한도) 감안하면 생략 쪽으로 기울어 있음, 최종 결정 필요
+- Bedrock 계정 하루 한도 해제 시점 — 풀리는 대로 2·3·5번 항목 실행 이어감
