@@ -74,6 +74,26 @@ Bedrock 계정 하루 한도가 여러 차례 재시도(사진 태깅 2회, 전�
 DEVPLAN.md에 "웹 UI는 PoC 수준"이라고 결정만 해두고 실제 작업 목록엔 빠뜨렸던 걸 뒤늦게 챙김. `static/index.html` 정적 페이지(사진 목록·클릭 선택·요청 입력, 바닐라 JS) 하나 추가하고, `src/agent.py`에 `GET /`(페이지 서빙)·`GET /data/*`(사진·photos.json 정적 서빙, `StaticFiles` 마운트)를 붙임 — 에이전트 규약인 `POST /query` 자체는 그대로 두고 UI 편의용으로만 추가한 것.
 TestClient로 `/`, `/data/photos.json`, `/data/IMG_0001.jpg` 모두 Bedrock 없이 정상 동작 확인. MINIPJT.md 공식 채점 기준(§7·§8)에는 UI 항목이 없어서, 없어도 제출엔 문제없지만 "구현 시연 캡처본" 찍기엔 있는 편이 나아서 최소 수준으로 만듦.
 
+### 모델 폴백 도입 — 스로틀링 실질적으로 해결
+사용자가 확인해준 바로는 계정 하루 한도가 아니라 **모델별 한도**였음 (다른 모델로 테스트하면 풀리는 이유). `src/model.py`를 새로 만들어 기본 모델이 Bedrock 오류(ClientError)를 내면 후보 모델 목록으로 자동 전환하도록 함:
+```
+global.anthropic.claude-sonnet-4-5-20250929-v1:0, us.anthropic.claude-sonnet-4-6,
+global.anthropic.claude-sonnet-4-6, us/global.anthropic.claude-haiku-4-5-20251001-v1:0,
+us.amazon.nova-pro-v1:0, us/global.amazon.nova-2-lite-v1:0, us.amazon.nova-lite-v1:0
+```
+LangChain의 `model.with_fallbacks([...])`가 `bind_tools()`까지 그대로 전파해줘서 `create_agent`에 그대로 넣을 수 있었음(직접 테스트로 확인). `agent.py`·`tools.py` 양쪽의 모델 생성 로직을 이 모듈로 통합.
+
+이 폴백으로 실제 Bedrock 호출 처음 성공: `search_photos` 통한 자체평가 1건 PASS, `generate_caption`으로 p001 캡션 첫 생성 성공. 다만 여러 모델을 번갈아 쓰면 그만큼 각 모델 한도를 나눠 쓰는 셈이라, 앞으로도 무분별하게 재시도 반복은 피하기로 함.
+
+### 날짜 인식 버그 발견·수정
+위 첫 성공 테스트("작년 여름 제주도 바다 사진")에서 에이전트가 "작년"을 **2024년**으로 잘못 해석해 실제로 있는 p001(2025-08-14)을 못 찾는 현상 발견 — 시스템 프롬프트에 오늘 날짜를 안 알려줬던 게 원인. `agent.py`의 시스템 프롬프트를 함수화(`_system_prompt()`)해서 매번 실제 오늘 날짜(`date.today()`)를 넣고, 상대 날짜 표현은 그 날짜 기준으로 계산하라고 명시.
+
+### 정책 공백 발견 · 보완
+"근거 없는 지명 태그" 버그를 짚었던 이전 피드백을 다시 짚어보니, "실제로 확인되지 않은 사실을 넣지 않는다"는 원칙이 캡션 쪽(`generate_caption` 프롬프트, `agent.py` 시스템 프롬프트)에는 있었지만 **태그 쪽(`index_photos`)과 SERVICE.md 정책(4번)에는 명문화돼 있지 않았음**을 확인함. SERVICE.md 4번에 "메타데이터가 존재하더라도 그 값 자체가 근거 없이 채워진 것일 수 있으므로 사실처럼 반영하지 않는다"는 일반 원칙을 추가하고, `index_photos` 프롬프트에도 같은 취지 문구를 넣어 태그·캡션 양쪽에 일관되게 적용되도록 함.
+
+### 토큰 사용량 로깅 추가
+API 응답 계약(answer/contexts/trace 고정 3키)은 그대로 두고, Bedrock을 호출하는 모든 지점(`agent.py`의 `ask()`, `tools.py`의 `index_photos`·`generate_caption`)에서 호출마다 콘솔에 `[tokens] ... model=... input=... output=...` 로 실제 응답한 모델명과 입출력 토큰 수를 출력하도록 함.
+
 ### 정정 — "풍경 위주" 결정을 되돌림
 Day8에 "샘플 사진은 풍경 위주로만"이라고 정했던 건, 인물 사진을 실제로 구할 수 있을지 확신이 없어서 준비 부담을 줄이려던 임시방편이었다. 그런데 SERVICE.md 6번(예외 상황)에는 그 결정 이전부터 "인물 얼굴·GPS 좌표가 감지되면 공유 전 경고한다"는 정책이 이미 있었어서, 정작 그걸 검증할 인물 사진이 없는 앞뒤가 안 맞는 상태였다.
 - 라이선스 문제 없는 인물 사진을 포함해 30장 내외 수집 가능해짐에 따라 결정을 되돌림
