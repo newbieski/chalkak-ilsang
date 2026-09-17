@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+
+# 사진 원본 파일은 로컬 테스트 전용 — 라이선스·초상권 문제로 깃에 올리지 않는다.
+# data/photos.json, data/tones.json 같은 메타데이터(JSON)는 그대로 커밋한다.
+data/*.jpg
+data/*.jpeg
+data/*.png
+data/*.webp

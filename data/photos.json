@@ -1,16 +1,22 @@
 [
   {
     "id": "p001",
-    "filename": "beach_sunset_01.jpg",
+    "filename": "IMG_0001.jpg",
     "taken_at": "2025-08-14",
     "location": "제주 협재해변",
-    "tags": [],
+    "tags": [
+      "협재해변",
+      "일몰",
+      "교량",
+      "바다",
+      "제주도"
+    ],
     "caption": null,
     "caption_tone": null
   },
   {
     "id": "p002",
-    "filename": "forest_trail_02.jpg",
+    "filename": "IMG_0002.jpg",
     "taken_at": "2025-10-05",
     "location": "강원 평창",
     "tags": [],
@@ -19,7 +25,7 @@
   },
   {
     "id": "p003",
-    "filename": "cafe_window_03.jpg",
+    "filename": "IMG_0003.jpg",
     "taken_at": "2026-03-21",
     "location": "서울 성수동",
     "tags": [],
@@ -28,7 +34,7 @@
   },
   {
     "id": "p004",
-    "filename": "mountain_ridge_04.jpg",
+    "filename": "IMG_0004.jpg",
     "taken_at": "2025-11-02",
     "location": "강원 설악산",
     "tags": [],
@@ -37,7 +43,7 @@
   },
   {
     "id": "p005",
-    "filename": "city_night_05.jpg",
+    "filename": "IMG_0005.jpg",
     "taken_at": "2026-08-22",
     "location": "서울 남산",
     "tags": [],
@@ -46,7 +52,7 @@
   },
   {
     "id": "p006",
-    "filename": "flower_field_06.jpg",
+    "filename": "IMG_0006.jpg",
     "taken_at": "2026-08-05",
     "location": "경기 가평",
     "tags": [],
@@ -55,7 +61,7 @@
   },
   {
     "id": "p007",
-    "filename": "sea_horizon_07.jpg",
+    "filename": "IMG_0007.jpg",
     "taken_at": null,
     "location": null,
     "tags": [],
@@ -64,7 +70,7 @@
   },
   {
     "id": "p008",
-    "filename": "old_alley_08.jpg",
+    "filename": "IMG_0008.jpg",
     "taken_at": null,
     "location": null,
     "tags": [],
@@ -73,7 +79,7 @@
   },
   {
     "id": "p009",
-    "filename": "snow_road_09.jpg",
+    "filename": "IMG_0009.jpg",
     "taken_at": null,
     "location": null,
     "tags": [],
@@ -82,7 +88,187 @@
   },
   {
     "id": "p010",
-    "filename": "lake_reflection_10.jpg",
+    "filename": "IMG_0010.jpg",
+    "taken_at": null,
+    "location": null,
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p011",
+    "filename": "IMG_0011.jpg",
+    "taken_at": "2025-06-14",
+    "location": "서울 어린이대공원",
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p012",
+    "filename": "IMG_0012.jpg",
+    "taken_at": null,
+    "location": null,
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p013",
+    "filename": "IMG_0013.jpg",
+    "taken_at": "2025-09-02",
+    "location": "부산 해운대",
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p014",
+    "filename": "IMG_0014.jpg",
+    "taken_at": "2025-04-20",
+    "location": "경기 일산호수공원",
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p015",
+    "filename": "IMG_0015.jpg",
+    "taken_at": null,
+    "location": null,
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p016",
+    "filename": "IMG_0016.jpg",
+    "taken_at": "2025-05-05",
+    "location": "서울 한강공원",
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p017",
+    "filename": "IMG_0017.jpg",
+    "taken_at": null,
+    "location": null,
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p018",
+    "filename": "IMG_0018.jpg",
+    "taken_at": "2025-07-19",
+    "location": "전남 순천만정원",
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p019",
+    "filename": "IMG_0019.jpg",
+    "taken_at": "2026-01-03",
+    "location": "서울 반포한강공원",
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p020",
+    "filename": "IMG_0020.jpg",
+    "taken_at": null,
+    "location": null,
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p021",
+    "filename": "IMG_0021.jpg",
+    "taken_at": null,
+    "location": null,
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p022",
+    "filename": "IMG_0022.jpg",
+    "taken_at": "2025-08-30",
+    "location": "인천공항",
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p023",
+    "filename": "IMG_0023.jpg",
+    "taken_at": "2025-03-12",
+    "location": "자택",
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p024",
+    "filename": "IMG_0024.jpg",
+    "taken_at": null,
+    "location": null,
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p025",
+    "filename": "IMG_0025.jpg",
+    "taken_at": "2026-02-01",
+    "location": "자택",
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p026",
+    "filename": "IMG_0026.jpg",
+    "taken_at": null,
+    "location": null,
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p027",
+    "filename": "IMG_0027.jpg",
+    "taken_at": "2025-11-08",
+    "location": "자택",
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p028",
+    "filename": "IMG_0028.jpg",
+    "taken_at": null,
+    "location": null,
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p029",
+    "filename": "IMG_0029.jpg",
+    "taken_at": "2025-06-01",
+    "location": "책상",
+    "tags": [],
+    "caption": null,
+    "caption_tone": null
+  },
+  {
+    "id": "p030",
+    "filename": "IMG_0030.jpg",
     "taken_at": null,
     "location": null,
     "tags": [],

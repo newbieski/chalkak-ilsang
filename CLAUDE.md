@@ -4,6 +4,7 @@
 - Python, LangChain, LangGraph
 - 모델은 Amazon Bedrock (ChatBedrockConverse)
 - Agent 생성은 langchain.agents 의 create_agent 를 쓴다
+- 패키지는 항상 가상환경(.venv)에 설치한다. 전역 파이썬에 pip install 하지 않는다
 
 ## 폴더 구조 (제출 규약. 바꾸지 않는다)
 src/agent.py       메인 에이전트 그래프

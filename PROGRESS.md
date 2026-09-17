@@ -25,3 +25,58 @@
 - 실제 이미지 10장을 `data/` 에 `photos.json` 의 filename 그대로 넣어야 함. 15번 문항(저화질 추정 태그) 검증용으로 한 장은 일부러 흐릿한 것으로 준비.
 - `POST /query` 가 `question` 한 필드만 받는데 UI에서 고른 사진을 어떻게 전달할지 미정. 질문 문자열에 사진 ID를 끼워 넣을지 Day9 구현 시점에 결정.
 - 제출 마감 시각이 규약 페이지 안에서 14:00과 15:00으로 엇갈림. 강사에게 확인 필요.
+
+## Day 9 · 2026-09-17 · 개발
+
+### 강사 리뷰
+어제 SERVICE.md 기획안을 보고 강사님이 주신 피드백.
+- 긍정: "정보 없는 사진은 모른다고 남기고 추측하지 않는다"는 가드레일 설계가 잘 짜여 있다.
+- 우려: 이미지 내용으로 태그를 뽑는 부분은 프롬프트가 확률적이라 정확도가 들쭉날쭉할 수 있다.
+- 제안: 애매한 사진은 지금처럼 추정 표시로 남기는 정책을 유지하고, `generate_caption`·`search_photos`부터 먼저 안정화한 뒤 `test_queries.csv` 통과율을 보라.
+
+→ 정책은 그대로 두고, 개발 우선순위에 반영 (DEVPLAN.md 참고).
+
+### 한 일
+- `src/retriever.py`: `photos.json` 읽기·쓰기 + 태그·텍스트 기반 검색
+- `src/tools.py`: `index_photos`·`generate_caption`·`search_photos`·`get_photo` 4개 도구
+- `src/agent.py`: `create_agent`로 4개 도구를 묶은 에이전트, `photo_id::요청` 파싱, FastAPI `POST /query`
+- `requirements.txt`, `.env.example`, `run.sh`, `src/__init__.py` 추가
+- 가상환경(.venv) 만들어 그 안에 패키지 설치 — 처음에 실수로 전역 파이썬에 설치했다가 정정. CLAUDE.md에 "패키지는 항상 .venv에 설치" 규칙 추가하고 `.gitignore`에 `.venv/`·`.env` 등록
+- Bedrock 호출 없이 되는 부분(파일 문법, retriever 검색·조회, tools의 검색/조회 도구, agent의 질문 파싱)은 실행해서 확인함. 실제 모델 호출(index_photos, generate_caption, 에이전트 전체 흐름)은 AWS 자격 증명과 사진 파일이 있어야 확인 가능 — 아직 미검증
+
+### 남은 것
+- `index_photos` → `generate_caption` → `search_photos` 전체 흐름 실행 확인 (아래 스로틀링 해소 후 재시도)
+- 가드레일(guardrail) 문항 대응: 현재 시스템 프롬프트에 정책 문구만 넣어둔 상태라, test_queries.csv로 실제로 통과하는지 확인 필요
+
+### 막힘 — Bedrock 스로틀링
+`.env`에 `sds-ax-practice`의 AWS 자격 증명(`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`)을 그대로 복사하고, 모델 ID는 같은 실습 코드(`day1_practice/first_call_raw.py`)에서 쓰던 `us.anthropic.claude-sonnet-4-5-20250929-v1:0`(리전 `us-east-1`)로 맞췄다.
+사진 1장으로 `index_photos` 단독 테스트했더니 코드는 이미지 인코딩·모델 생성·Bedrock 호출까지 끝까지 도달했고, `ThrottlingException: Too many tokens per day` 로 실패함. 계정이 강의 기간 동안 누적 사용됐거나 공유 계정이라 한도에 걸린 것으로 보임 — 코드 결함이 아니라 계정 쪽 한도 문제. 잠시 기다렸다가 재시도하기로 함.
+
+재시도해서 p001은 성공(저장 확인). 나머지 29장 한 번에 돌렸다가 p002에서 다시 스로틀링 — 이 시점에 `index_photos`가 전체 처리 후 한 번에 저장하는 구조라 중간 실패 시 이미 만든 결과까지 날아가는 버그를 발견해 사진마다 즉시 저장하도록 수정(`src/tools.py`). 다른 모델로 바꿔도 한도가 풀리는지 확인해보려 했으나, 이 계정은 IAM으로 현재 모델 하나만 쓰도록 제한돼 있어 다른 모델 자체에 접근 불가 — 계정 전체에 걸린 예산성 제한으로 보임.
+이후 태그 결과를 보니 지명(예: "협재해변", "제주도")이 그대로 태그에 섞여 나옴 — 프롬프트에 촬영 장소를 참고 정보로 같이 넣었던 게 원인. 사용자 의도는 "공원에서 조깅" 같은 일반적 활동·사물 태그였음. 프롬프트에서 촬영일·장소 참고 정보를 빼고 "지명·고유명사 금지"를 명시하도록 수정. 5장(p001~p005)으로 재검증하려 했으나 이번엔 첫 호출부터 바로 스로틀링 — 계정 하루 한도가 현재 사실상 소진된 상태로 보임. 한도 풀리는 대로 재시도 예정.
+
+### `evaluation/run_eval.py` 작성
+test_queries.csv를 읽어 문항마다 에이전트를 실행하고, expected_tools(불렀는지)·forbidden(답변에 나오면 안 되는 표현)을 자동 채점, expected_traits는 사람이 보게 답변과 나란히 리포트에 남기는 스크립트 작성 (MINIPJT.md 4-4 규약대로). `--limit N`으로 일부만 돌려 스로틀링 테스트에도 씀.
+
+### 사진 세트 교체에 따른 test_queries.csv 정합성 점검
+사용자가 30장을 실제 위키미디어 공용(라이선스 문제 없는 CC0·Public domain·CC BY·CC BY-SA) 사진으로 새로 준비하면서 `data/photos.json`도 통째로 교체됨(`data/PHOTO_CREDITS.md`에 출처·라이선스 정리). 이 참에 test_queries.csv 20건이 새 데이터와 맞는지 점검함.
+- **문제 발견**: "이 사진 ~" 형태 문항 다수가 어떤 사진을 가리키는지 ID가 없었음. 실제 서비스는 UI가 `photo_id::요청` 형식으로 사진을 지정하는데, 테스트 문항은 순수 자연어라 에이전트가 대상을 특정할 수 없는 상태였음 — 로직 결함이 아니라 테스트 설계 문제
+- 2·5·8·10·12·14·15·17·18·19번 문항에 실제 데이터에 맞는 `photo_id::` 접두어 추가 (예: 10번은 EXIF 없는 p007, 18번은 사람이 나온 p011)
+- 15번(저화질 추정 태그)은 실제로 저화질인 사진이 없어서, 사진 품질을 거짓으로 주장하는 대신 "정확히 뭔지 모르겠다"는 사용자 관점 문구로 바꿔 p021(다육식물 클로즈업)에 붙임
+- 5번(커스텀 톤) 검증을 위해 `data/tones.json`의 `custom.samples`에 임시 샘플 문장 2개를 채움 (사용자 본인 글 준비되면 교체 예정)
+
+### 스로틀링 대기 중 — mock 모델로 agent.py 로직 검증
+Bedrock 계정 하루 한도가 여러 차례 재시도(사진 태깅 2회, 전체 에이전트 2회)에도 안 풀려서, 그동안 안 쓴 채로 두지 않고 `FakeMessagesListChatModel`(스크립트로 정한 응답만 돌려주는 가짜 모델)로 `agent.py`의 메시지 조립 로직만 따로 검증함(임시 스크립트, 저장소에는 포함 안 함).
+- 가짜 모델이 `search_photos` 호출을 지시 → 실제 `retriever.py`가 진짜 `data/photos.json`(p001)에서 결과를 찾음 → `trace`/`contexts`/`answer` 조립까지 전부 정상 동작 확인
+- 즉 `create_agent`의 LangGraph 실행, 도구 실행, 메시지 파싱 코드 자체는 문제없음이 검증됨. 아직 확인 못 한 건 "모델이 실제로 상황에 맞게 도구를 고르고 가드레일을 지키는가" — 이건 mock으로 확인 불가, 진짜 Bedrock 호출이 필요함
+
+### 데모 UI 추가
+DEVPLAN.md에 "웹 UI는 PoC 수준"이라고 결정만 해두고 실제 작업 목록엔 빠뜨렸던 걸 뒤늦게 챙김. `static/index.html` 정적 페이지(사진 목록·클릭 선택·요청 입력, 바닐라 JS) 하나 추가하고, `src/agent.py`에 `GET /`(페이지 서빙)·`GET /data/*`(사진·photos.json 정적 서빙, `StaticFiles` 마운트)를 붙임 — 에이전트 규약인 `POST /query` 자체는 그대로 두고 UI 편의용으로만 추가한 것.
+TestClient로 `/`, `/data/photos.json`, `/data/IMG_0001.jpg` 모두 Bedrock 없이 정상 동작 확인. MINIPJT.md 공식 채점 기준(§7·§8)에는 UI 항목이 없어서, 없어도 제출엔 문제없지만 "구현 시연 캡처본" 찍기엔 있는 편이 나아서 최소 수준으로 만듦.
+
+### 정정 — "풍경 위주" 결정을 되돌림
+Day8에 "샘플 사진은 풍경 위주로만"이라고 정했던 건, 인물 사진을 실제로 구할 수 있을지 확신이 없어서 준비 부담을 줄이려던 임시방편이었다. 그런데 SERVICE.md 6번(예외 상황)에는 그 결정 이전부터 "인물 얼굴·GPS 좌표가 감지되면 공유 전 경고한다"는 정책이 이미 있었어서, 정작 그걸 검증할 인물 사진이 없는 앞뒤가 안 맞는 상태였다.
+- 라이선스 문제 없는 인물 사진을 포함해 30장 내외 수집 가능해짐에 따라 결정을 되돌림
+- `evaluation/test_queries.csv` 18·19번 guardrail 문항을 원래 취지(인물 신원 추정 차단, 위치 정보 노출 차단)로 복원
+- **사진 원본 파일은 git에 올리지 않기로 함** — 라이선스·초상권 문제를 피하려고 로컬 테스트 전용으로 두고, `data/photos.json`·`data/tones.json` 같은 메타데이터만 커밋한다. `.gitignore`에 `data/*.jpg` 등 등록
+- SERVICE.md 3번 데이터 설명에서 "풍경 위주" 문구 제거, 사진 파일이 로컬 전용이라는 점 명시
