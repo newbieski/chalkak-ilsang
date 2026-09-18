@@ -18,23 +18,23 @@
 원문 블록 제목("기획 마무리 + 인-아웃 세트 + 서비스 스펙")의 세 항목과 1:1 대응:
 - [x] **기획 마무리** — SERVICE.md 완성 (5. 성공 기준에 최소 통과율 숫자 명시 포함)
 - [x] **인-아웃 세트** — evaluation/test_queries.csv 최소 10건(권장 15~20건) 작성 — 20건 완료
-- [x] **서비스 스펙** — 데이터·도구 준비 (`data/photos.json` 10건 · `data/tones.json` · 도구 4개 확정) · 실제 이미지 파일 수집은 남음
-- [ ] Day 종료 15분 전 강사에게 진도 공유 (SERVICE.md·CSV 완성 확인)
+- [x] **서비스 스펙** — 데이터·도구 준비 (`data/photos.json` 30건 · `data/tones.json` · 도구 4개 확정) · 실제 이미지 파일도 이후 수집·커밋 완료 (`data/PHOTO_CREDITS.md` 출처 정리)
+- [ ] Day 종료 15분 전 강사에게 진도 공유 (SERVICE.md·CSV 완성 확인) — 실시간 진행 상황 공유라 기록으로 남길 수 없는 항목, Day8 이미 지남
 
 ### Day 9 · 개발
-- [x] 실제 개발 (에이전트·도구·RAG·가드레일·트레이스 붙이기) — 구현 완료, 실제 Bedrock 호출 검증은 계정 하루 한도로 대기 중 (자세한 내용은 DEVPLAN.md·PROGRESS.md)
+- [x] 실제 개발 (에이전트·도구·RAG·가드레일·트레이스 붙이기) — 구현 완료, 이후 실제 Bedrock 호출로 반복 검증함 (자세한 내용은 DEVPLAN.md·PROGRESS.md)
 - [x] MCP 연동 (선택) — 생략하기로 확정 (마땅히 연동할 외부 도구가 없음)
-- [ ] test_queries.csv로 자체 평가 반복 (LLM-as-Judge·RAGAS 지표 산출) · 개선 사이클 — 채점 스크립트(`evaluation/run_eval.py`)는 완성, 실행은 Bedrock 한도 풀려야 가능
-- [ ] `evaluation/round1_report.md` 저장 — 위와 같은 이유로 대기
-- [ ] 강사 1:1 순회 리뷰 (인당 5~10분)
+- [x] test_queries.csv로 자체 평가 반복 (LLM-as-Judge 방식) · 개선 사이클 — round1(17/20) → round2(18/20 기계 채점·20/20 사람 확인) 완료
+- [x] `evaluation/round1_report.md` 저장
+- [ ] 강사 1:1 순회 리뷰 (인당 5~10분) — 실시간 리뷰라 기록으로 남길 수 없는 항목, Day9 이미 지남
 
 ### Day 10 · 마감·제출·랩업
-- [ ] 개발 마무리
-- [ ] `evaluation/round2_report.md` 저장 (1차 대비 개선폭 명시)
-- [ ] 코드 정리·리팩터링, README.md 완성 (트라이앤에러 회고 포함)
-- [ ] (선택) Docker 재빌드·클린 환경 재현성 검증
+- [x] 개발 마무리
+- [x] `evaluation/round2_report.md` 저장 (1차 대비 개선폭 명시)
+- [x] 코드 정리·리팩터링, README.md 완성 (트라이앤에러 회고 포함)
+- [x] (선택) Docker 재빌드·클린 환경 재현성 검증 — 하지 않기로 결정 (Dockerfile 자체를 만들지 않음, PoC 규모라 `run.sh`로 충분하다고 판단)
 - [ ] Google Form 제출 (github 주소 또는 zip + 구현 시연 캡처본)
-- [ ] 마감 전 재제출 가능 — 최종 제출본(동일 이름 기준 최신)만 채점 대상
+- [ ] 마감 전 재제출 가능 — 최종 제출본(동일 이름 기준 최신)만 채점 대상 (제출 관련 유의사항, 별도 액션 아님)
 
 ## 3. 필수 산출물 구조 (제출 규약 — CLAUDE.md 폴더 구조와 동일)
 ```
