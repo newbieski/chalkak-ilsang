@@ -165,3 +165,9 @@ Day8에 "샘플 사진은 풍경 위주로만"이라고 정했던 건, 인물 �
 
 ### 정정 — DESIGN.md는 main에 유지
 DESIGN.md를 main에서 삭제했던 건 "원래 없던 파일이니 원복"이라는 논리였는데, 실제 의도는 DESIGN.md를 main에 두고 디자인 시도(브랜치)마다 그 문서를 이어서 업데이트하며 쓰려는 것이었음. 그 의도에 맞게 main에 DESIGN.md를 다시 두되, 시도별로 달라지는 세부 내용(사용 스킬, 생성된 디자인 시스템, 진행 상태)은 빼고 공통으로 유지할 참고 자료·방향과 "시도 이력"(브랜치별 결과 요약)만 남기는 구조로 재구성함. 각 디자인 브랜치는 이 문서를 이어받아 그 시도의 세부 내용을 추가하는 방식으로 사용.
+
+### UI 2차 시도(Hallmark 스킬) 및 main 병합
+[Hallmark](https://github.com/nutlope/hallmark) 스킬(`npx skills add nutlope/hallmark`로 설치)의 `redesign` verb로 `static/index.html`을 다시 다듬음. 커스텀(tuned) OKLCH 팔레트(웜 크림 paper + 클레이 accent 단일톤) + Newsreader/Switzer 폰트 페어링으로 1차 시도(브라운+인디고, Caveat/Quicksand)와는 다른 방향을 시도했고, 스킬의 대비 기준(WCAG 4.5:1/3:1)에 맞춰 색상값을 재계산해 접근성 문제를 미리 잡았다. 실사용 확인 후 "왼쪽 쏠림·미완성 느낌" 피드백을 받아 중앙 정렬·여백 리듬 조정·폴라로이드 느낌의 사진 그리드·날짜 표시를 추가로 다듬었다. usehallmark.com이 보여주는 카탈로그 테마(Hum·Lumen 등)도 검토했으나 각각 장난감 앱·프리미엄 AI 툴용으로 방향이 안 맞아 채택하지 않음. 최종적으로 `design/hallmark-v1` 브랜치를 main에 fast-forward 병합함 (`design/ui-ux-pro-max-v1`은 보류 상태로 그대로 둠).
+
+### 정정 — 사진 원본 파일을 git에 커밋하기로 함
+Day8에 "사진 원본은 라이선스·초상권 문제를 피하려고 로컬 전용으로 둔다"고 정했던 결정을 되돌림. `data/PHOTO_CREDITS.md`에 30장 전부 Wikimedia Commons 출처·저작자·라이선스(CC0/Public domain/CC BY/CC BY-SA)가 이미 정리돼 있어 재배포 근거가 명확하고, EXIF 재확인 결과 GPS 좌표는 전혀 없음(기기 모델 정보만 2장에 남음). 사진 속 인물도 원래 Commons에 공개돼 있던 익명 인물이라 여기 올린다고 노출이 늘지 않음. 오히려 사진 파일이 없으면 저장소를 그대로 clone했을 때 화면에 사진이 안 뜨는 문제가 있어, 채점·재현성 관점에서도 커밋하는 쪽이 낫다고 판단. `.gitignore`의 `data/*.jpg` 등 제외 규칙 제거, SERVICE.md·README.md의 "로컬 전용" 문구 수정.

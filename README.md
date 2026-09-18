@@ -171,7 +171,7 @@ flowchart LR
         P["photos.json<br/>메타데이터·태그·캡션·임베딩"]
         TN["tones.json<br/>톤 프리셋·커스텀 샘플"]
         CR["PHOTO_CREDITS.md<br/>출처·라이선스"]
-        IMG["*.jpg 등 사진 원본<br/>(git 미포함, 로컬 전용)"]
+        IMG["*.jpg 등 사진 원본<br/>(Wikimedia Commons CC 라이선스, data/PHOTO_CREDITS.md 참고)"]
     end
     RT["src/retriever.py"] -->|읽기·쓰기| P
     TL["src/tools.py"] -->|읽기·쓰기| TN
