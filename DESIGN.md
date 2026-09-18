@@ -25,3 +25,14 @@ UI 디자인은 방식(스킬·도구)별로 브랜치를 따서 시도한다. m
 ### 1차 — ui-ux-pro-max 스킬 (보류)
 - 브랜치: `design/ui-ux-pro-max-v1`
 - Soft UI Evolution 스타일(웜 브라운 프라이머리 + 인디고 액센트, Caveat/Quicksand 타이포그래피)로 색상·폰트·app-shell 카드 구조까지 적용했으나, 실사용 확인 결과 "특별히 바뀐 느낌이 없다"는 평가로 보류. 세부 내용·생성된 디자인 시스템은 해당 브랜치의 DESIGN.md 참고
+
+### 2차 — Hallmark 스킬 (진행 중)
+- 브랜치: `design/hallmark-v1`
+- 스킬: [Hallmark](https://github.com/nutlope/hallmark) — "anti-AI-slop" 디자인 스킬. `npx skills add nutlope/hallmark`로 설치(`.agents/skills/hallmark/`, `.claude/skills/hallmark`는 심볼릭 링크). `hallmark redesign ./static/index.html --mood "warm, soft, minimal personal photo diary"` 형태로 호출, 기존 구현(id·JS 로직) 경계 안에서만 시각/구성 레이어를 다시 설계하는 `redesign` verb의 single-page flow를 따름.
+- 적용 내용:
+  - **팔레트**: 커스텀(tuned) OKLCH 톤 — vibe "quiet warm paper journal, soft ink, unhurried". paper `oklch(94% 0.014 70)`(따뜻한 크림), accent `oklch(44% 0.13 35)`(차분한 클레이/테라코타 단일 포인트). 1차 시도의 브라운+인디고 투톤과 달리 단일 웜톤 계열로 통일
+  - **타이포그래피**: 제목 `Newsreader`(로만 세리프, 일기장 같은 문학적 느낌) + 본문 `Switzer`(중립 산세리프) 2폰트 페어링 — 손글씨체(Caveat)를 썼던 1차 시도와는 완전히 다른 방향
+  - **레이아웃**: "card-in-card" 금지 원칙에 따라 중첩 카드 박스를 없애고, 헤어라인 구분선(`<hr class="section-rule">`)과 여백 리듬으로 섹션을 구분. 사진 그리드는 flex-wrap → CSS grid로, 매크로스트럭처 카탈로그 중 "Portfolio Grid"(작업물이 곧 컨텐츠인 그리드) 보이스를 차용해 적용 — 다만 실제 매크로스트럭처는 마케팅 페이지 전용이라 우리 앱(단일 화면 유틸리티 도구)엔 그대로 맞지 않아 보이스만 참고하고 구조(사진 그리드→선택→패널 흐름)는 그대로 유지
+  - **접근성**: 스킬의 색 대비 기준(WCAG 4.5:1 텍스트/3:1 UI 경계)에 맞춰 초안의 accent·muted 값을 더 어둡게 재조정함(대비 계산 후 수정). 사진 그리드에 키보드 포커스(tabindex/role/Enter·Space)와 alt 텍스트 추가
+  - **버튼**: Hallmark의 "accent는 하이라이트지 배경 칠이 아니다" 원칙에 따라 기본 상태는 accent 테두리+텍스트, hover 시에만 accent로 채움 (1차 시도의 상시 필박스 버튼과 다른 보이스)
+- 상태: 로컬 서버로 렌더링 확인 완료(`static/index.html`이 서빙된 페이지와 바이트 일치). 사용자 최종 확인 대기 중

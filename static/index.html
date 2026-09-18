@@ -3,67 +3,191 @@
 <head>
 <meta charset="utf-8" />
 <title>찰칵일상 · 데모</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600&display=swap">
 <style>
-  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
-  h1 { font-size: 1.3rem; }
-  h2 { font-size: 1.05rem; margin-bottom: 0.25rem; }
-  #photos { display: flex; flex-wrap: wrap; gap: 8px; margin: 1rem 0; }
-  .photo-item { text-align: center; position: relative; width: 110px; }
-  .photo-item img { width: 110px; height: 110px; object-fit: cover; border: 3px solid transparent; border-radius: 6px; cursor: pointer; display: block; }
-  .photo-item img.selected { border-color: #2563eb; }
-  .photo-item .badge {
-    position: absolute; top: 4px; right: 4px; font-size: 0.7rem; padding: 1px 6px;
-    border-radius: 10px; color: #fff;
-  }
-  .badge.done { background: #16a34a; }
-  .badge.todo { background: #9ca3af; }
-  .id-label { font-size: 0.7rem; color: #666; }
+/* Hallmark · macrostructure: Portfolio Grid (adapted — single-view utility tool, no marketing chrome)
+ * theme: custom · vibe: "quiet warm paper journal, soft ink, unhurried" · paper: oklch(94% 0.014 70) · accent: oklch(44% 0.13 35)
+ * display: Newsreader (roman) · body: Switzer · axes: light / roman-serif / warm
+ * studied: no · context: explicit (DESIGN.md 방향, redesign verb) · v1.1.0
+ * pre-emit critique: P4 H4 E4 S4 R5 V4
+ */
+:root {
+  --color-paper: oklch(94% 0.014 70);
+  --color-paper-2: oklch(91% 0.016 70);
+  --color-ink: oklch(20% 0.012 60);
+  --color-ink-2: oklch(38% 0.012 60);
+  --color-rule: oklch(80% 0.014 70);
+  --color-rule-2: oklch(87% 0.012 70);
+  --color-muted: oklch(44% 0.012 60);
+  --color-accent: oklch(44% 0.13 35);
+  --color-accent-ink: oklch(97% 0.010 70);
+  --color-focus: oklch(40% 0.20 35);
+  --color-danger: oklch(42% 0.18 25);
 
-  input[type="text"], textarea { width: 100%; padding: 0.5rem; font-size: 1rem; box-sizing: border-box; font-family: inherit; }
-  textarea { resize: vertical; }
-  button { padding: 0.5rem 1rem; margin-top: 0.5rem; cursor: pointer; }
-  label { display: block; margin-top: 0.75rem; font-size: 0.85rem; color: #444; }
+  --font-display: "Newsreader", ui-serif, Georgia, serif;
+  --font-body: "Switzer", ui-sans-serif, system-ui, sans-serif;
 
-  #panel { margin-top: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; }
-  #panel-photo { max-width: 100%; max-height: 320px; display: block; margin: 0 auto 0.75rem; border-radius: 8px; }
-  #panel-status { font-size: 0.9rem; }
-  #panel-status.done { color: #16a34a; }
-  #panel-status.todo { color: #6b7280; }
-  #panel-msg { font-size: 0.85rem; color: #2563eb; min-height: 1.2em; }
-  #deselect { background: none; border: 1px solid #ccc; }
+  --space-3xs: 0.125rem; --space-2xs: 0.25rem; --space-xs: 0.5rem; --space-sm: 0.75rem;
+  --space-md: 1rem; --space-lg: 1.5rem; --space-xl: 2.5rem; --space-2xl: 4rem; --space-3xl: 6rem;
 
-  #tags-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.4rem; min-height: 1.6rem; }
-  .tag-chip {
-    display: inline-flex; align-items: center; gap: 4px; background: #e0e7ff; color: #3730a3;
-    border-radius: 12px; padding: 2px 8px 2px 10px; font-size: 0.85rem;
-  }
-  .tag-chip button { margin: 0; padding: 0 2px; background: none; border: none; color: #3730a3; font-weight: bold; cursor: pointer; }
-  .tag-add-row { display: flex; gap: 6px; margin-top: 0.4rem; }
-  .tag-add-row input { flex: 1; }
-  .tag-add-row button { margin-top: 0; white-space: nowrap; }
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
-  #tone-section { margin-top: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; }
-  #tone-samples-list { margin-top: 0.4rem; }
-  .tone-sample-row { display: flex; align-items: flex-start; gap: 6px; padding: 6px 0; border-bottom: 1px solid #e5e7eb; }
-  .tone-sample-row span { flex: 1; font-size: 0.9rem; }
-  .tone-sample-row button { margin: 0; background: none; border: none; color: #dc2626; cursor: pointer; font-size: 0.85rem; }
-  #tone-section p.hint { font-size: 0.85rem; color: #555; margin: 0.25rem 0 0; }
+  --radius-sm: 4px;
+  --radius-md: 8px;
+}
 
-  #general { margin-top: 1.5rem; }
-  #selected-info { color: #2563eb; font-size: 0.9rem; min-height: 1.2em; }
-  #result { margin-top: 1rem; }
-  #result pre { background: #f5f5f5; padding: 0.75rem; border-radius: 6px; white-space: pre-wrap; word-break: break-word; }
-  #answer { font-size: 1.05rem; padding: 0.75rem; background: #eef6ff; border-radius: 6px; }
+html { overflow-x: clip; background: var(--color-paper); }
+body { overflow-x: clip; }
+* { box-sizing: border-box; }
+
+body {
+  font-family: var(--font-body);
+  font-weight: 400;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  line-height: 1.6;
+  margin: 0;
+  padding: var(--space-2xl) var(--space-lg) var(--space-3xl) clamp(var(--space-lg), 6vw, var(--space-3xl));
+  max-width: 46rem;
+}
+@media (min-width: 900px) { body { margin-left: 4vw; } }
+
+h1 {
+  font-family: var(--font-display); font-style: normal; font-weight: 600;
+  font-size: clamp(1.75rem, 2.5vw + 1rem, 2.5rem); line-height: 1.15; letter-spacing: -0.01em;
+  color: var(--color-ink); margin: 0 0 var(--space-xs); overflow-wrap: anywhere;
+}
+h2 {
+  font-family: var(--font-display); font-style: normal; font-weight: 600;
+  font-size: 1.25rem; color: var(--color-ink); margin: 0 0 var(--space-sm); overflow-wrap: anywhere;
+}
+p { color: var(--color-ink-2); margin: 0 0 var(--space-md); max-width: 62ch; }
+header.intro { margin-bottom: var(--space-xl); }
+h1 .eyebrow {
+  display: inline-block; font-family: var(--font-body); font-weight: 500; font-size: 0.75rem;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-muted);
+  vertical-align: middle; margin-left: var(--space-sm);
+}
+
+.section-rule { border: none; border-top: 1px solid var(--color-rule); margin: var(--space-2xl) 0 0; }
+
+label {
+  display: block; margin: var(--space-md) 0 var(--space-2xs);
+  font-size: 0.8125rem; font-weight: 500; color: var(--color-muted);
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+
+input[type="text"], textarea {
+  width: 100%; padding: var(--space-sm) var(--space-md); font-size: 1rem; font-family: inherit;
+  color: var(--color-ink); background: var(--color-paper-2);
+  border: 1px solid var(--color-rule); border-radius: var(--radius-sm);
+  transition: border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
+}
+input[type="text"] { line-height: 1.2; }
+textarea { resize: vertical; min-height: 5rem; line-height: 1.6; }
+input[type="text"]:focus-visible, textarea:focus-visible {
+  border-color: var(--color-focus); outline: 2px solid var(--color-focus); outline-offset: 1px;
+}
+
+button {
+  font-family: var(--font-body); font-weight: 500; font-size: 0.9375rem; line-height: 1.2;
+  padding: var(--space-sm) var(--space-md); margin-top: var(--space-sm);
+  border-radius: var(--radius-sm); border: 1px solid var(--color-accent);
+  background: transparent; color: var(--color-accent); cursor: pointer;
+  transition: background 160ms var(--ease-out), color 160ms var(--ease-out), transform 160ms var(--ease-out);
+}
+button:hover { background: var(--color-accent); color: var(--color-accent-ink); }
+button:active { transform: translateY(1px); }
+button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+
+#deselect, #add-tag, #add-tone-sample {
+  border-color: var(--color-rule); color: var(--color-ink-2);
+}
+#deselect:hover, #add-tag:hover, #add-tone-sample:hover { background: var(--color-paper-2); color: var(--color-ink); }
+
+#photos {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: var(--space-sm) var(--space-xs); margin: var(--space-lg) 0 0;
+}
+.photo-item { position: relative; min-width: 0; }
+.photo-item img {
+  width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: var(--radius-sm);
+  display: block; cursor: pointer; filter: saturate(0.97);
+  transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
+}
+.photo-item img:hover { transform: translateY(-2px); box-shadow: 0 4px 14px oklch(20% 0.01 60 / 0.16); }
+.photo-item img.selected { box-shadow: 0 0 0 2px var(--color-paper), 0 0 0 4px var(--color-accent); }
+.photo-item img:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+.photo-item .badge {
+  position: absolute; top: var(--space-2xs); right: var(--space-2xs);
+  font-size: 0.625rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 2px 6px; border-radius: 3px; color: var(--color-paper);
+}
+.badge.done { background: oklch(44% 0.12 145); }
+.badge.todo { background: oklch(42% 0.012 60); }
+.id-label { font-size: 0.6875rem; color: var(--color-muted); margin-top: var(--space-3xs); }
+
+#panel, #tone-section, #general { margin-top: var(--space-2xl); }
+#panel-photo {
+  max-width: 100%; max-height: 22rem; display: block; margin: 0 0 var(--space-md);
+  border-radius: var(--radius-md); object-fit: cover;
+}
+#panel-status { font-size: 0.875rem; }
+#panel-status.done { color: oklch(42% 0.10 145); }
+#panel-status.todo { color: var(--color-muted); }
+#panel-msg { font-size: 0.8125rem; color: var(--color-accent); min-height: 1.2em; font-weight: 500; margin-top: var(--space-sm); }
+
+#tags-list { display: flex; flex-wrap: wrap; gap: var(--space-2xs); margin-top: var(--space-2xs); min-height: 1.6rem; }
+.tag-chip {
+  display: inline-flex; align-items: center; gap: 4px; background: transparent; color: var(--color-ink-2);
+  border: 1px solid var(--color-rule); border-radius: 999px; padding: 2px 6px 2px 10px; font-size: 0.8125rem;
+}
+.tag-chip button { margin: 0; padding: 0 2px; border: none; background: none; color: var(--color-muted); font-weight: bold; cursor: pointer; }
+.tag-chip button:hover { background: none; color: var(--color-danger); }
+.tag-add-row { display: flex; gap: var(--space-xs); margin-top: var(--space-2xs); align-items: center; }
+.tag-add-row input { flex: 1; min-width: 0; }
+.tag-add-row button { margin-top: 0; white-space: nowrap; }
+
+#tone-section p.hint { font-size: 0.875rem; color: var(--color-muted); max-width: 60ch; }
+#tone-samples-list { margin-top: var(--space-xs); }
+.tone-sample-row { display: flex; align-items: flex-start; gap: var(--space-sm); padding: var(--space-sm) 0; border-top: 1px solid var(--color-rule-2); }
+.tone-sample-row:first-child { border-top: none; }
+.tone-sample-row span { flex: 1; font-size: 0.9375rem; min-width: 0; overflow-wrap: anywhere; }
+.tone-sample-row button { margin: 0; border: none; background: none; color: var(--color-danger); font-size: 0.8125rem; font-weight: 500; padding: 0; }
+.tone-sample-row button:hover { background: none; text-decoration: underline; }
+
+#selected-info { color: var(--color-accent); font-size: 0.9375rem; min-height: 1.2em; font-weight: 500; margin-bottom: var(--space-sm); }
+#result { margin-top: var(--space-lg); }
+#result pre {
+  background: var(--color-paper-2); color: var(--color-ink-2); padding: var(--space-md);
+  border-radius: var(--radius-sm); white-space: pre-wrap; word-break: break-word; font-size: 0.8125rem;
+  border: 1px solid var(--color-rule-2);
+}
+#answer { font-size: 1.0625rem; padding-left: var(--space-md); border-left: 3px solid var(--color-accent); color: var(--color-ink); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+@media (max-width: 480px) {
+  body { padding-left: var(--space-md); padding-right: var(--space-md); margin-left: 0; }
+  #photos { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+}
 </style>
 </head>
 <body>
-  <h1>찰칵일상 · 데모 (PoC)</h1>
-  <p>사진을 클릭하면 문장(캡션) 생성·수정 화면이 뜹니다. 초록 배지는 이미 문장이 있는 사진입니다.</p>
+  <header class="intro">
+    <h1>찰칵일상 <span class="eyebrow">데모 · PoC</span></h1>
+    <p>사진을 클릭하면 문장(캡션) 생성·수정 화면이 뜹니다. 초록 배지는 이미 문장이 있는 사진입니다.</p>
+  </header>
 
   <button id="sync-photos">새 사진 불러오기</button>
-  <span id="sync-msg" style="font-size:0.85rem; color:#2563eb; margin-left:8px;"></span>
+  <span id="sync-msg" style="font-size:0.85rem; color:var(--color-accent); margin-left:8px;"></span>
 
   <div id="photos">불러오는 중...</div>
+
+  <hr class="section-rule">
 
   <!-- 사진을 고른 뒤: 요청(또는 기본값) → 생성 → 수정 → 확정 -->
   <div id="panel" hidden>
@@ -89,6 +213,8 @@
     <p id="panel-msg"></p>
   </div>
 
+  <hr class="section-rule">
+
   <!-- 커스텀 톤(내 문체) 등록 — 사진 선택과 무관한 전역 설정 -->
   <div id="tone-section">
     <h2>내 문체 등록</h2>
@@ -99,6 +225,8 @@
       <button id="add-tone-sample">추가</button>
     </div>
   </div>
+
+  <hr class="section-rule">
 
   <!-- 사진을 고르지 않았을 때: 사진 검색 -->
   <div id="general">
@@ -147,8 +275,14 @@ function renderPhotos() {
 
     const img = document.createElement('img');
     img.src = `/data/${p.filename}`;
+    img.alt = p.caption || `사진 ${p.id}`;
+    img.tabIndex = 0;
+    img.setAttribute('role', 'button');
     if (p.id === selectedId) img.classList.add('selected');
     img.onclick = () => selectPhoto(p.id);
+    img.onkeydown = e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectPhoto(p.id); }
+    };
 
     const badge = document.createElement('span');
     const done = !!p.caption;
@@ -209,7 +343,7 @@ function renderTags() {
     container.appendChild(chip);
   });
   if (!(photo.tags || []).length) {
-    container.innerHTML = '<span style="color:#9ca3af; font-size:0.85rem;">태그 없음</span>';
+    container.innerHTML = '<span style="color:var(--color-muted); font-size:0.85rem;">태그 없음</span>';
   }
 }
 
@@ -315,8 +449,8 @@ async function sendGeneralQuery() {
       .filter(id => photosById[id])
       .map(id => `
         <div style="display:inline-block; text-align:center; margin: 0 8px 8px 0;">
-          <img src="/data/${photosById[id].filename}" style="width:100px; height:100px; object-fit:cover; border-radius:6px; display:block;" />
-          <span style="font-size:0.7rem; color:#666;">${id}</span>
+          <img src="/data/${photosById[id].filename}" alt="${photosById[id].caption || id}" style="width:100px; height:100px; object-fit:cover; border-radius:4px; display:block;" />
+          <span style="font-size:0.7rem; color:var(--color-muted);">${id}</span>
         </div>
       `)
       .join('');
@@ -330,7 +464,7 @@ async function sendGeneralQuery() {
       <pre>${JSON.stringify(data.trace ?? [], null, 2)}</pre>
     `;
   } catch (err) {
-    resultEl.innerHTML = `<p style="color:red">요청 실패: ${err}</p>`;
+    resultEl.innerHTML = `<p style="color:var(--color-danger)">요청 실패: ${err}</p>`;
   }
 }
 
@@ -359,7 +493,7 @@ function renderToneSamples() {
   const container = document.getElementById('tone-samples-list');
   container.innerHTML = '';
   if (!toneSamples.length) {
-    container.innerHTML = '<span style="color:#9ca3af; font-size:0.85rem;">등록된 샘플 없음 — 등록 전까지는 기본 톤으로 처리됩니다.</span>';
+    container.innerHTML = '<span style="color:var(--color-muted); font-size:0.85rem;">등록된 샘플 없음 — 등록 전까지는 기본 톤으로 처리됩니다.</span>';
     return;
   }
   toneSamples.forEach((sample, idx) => {

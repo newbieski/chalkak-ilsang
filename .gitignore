@@ -9,3 +9,7 @@ data/*.jpg
 data/*.jpeg
 data/*.png
 data/*.webp
+
+# npx skills 로 설치된 스킬은 .agents/skills/에 실제 파일로 존재하고,
+# .claude/skills/<name>은 그걸 가리키는 심볼릭 링크(절대경로, 이 컴퓨터 전용)라 커밋하지 않는다.
+.claude/skills/hallmark
