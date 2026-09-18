@@ -3,6 +3,16 @@
 ## 무엇을 푸나
 개인 사진첩을 정리하고 싶은 사람이, 사진마다 어울리는 설명 글을 직접 써야 하고 원하는 기준으로 찾기도 어려운 문제를 푼다 — 사진을 올려두면 원하는 톤·분량으로 설명을 자동으로 받고, 자동 태그로 자연어·필터 검색까지 할 수 있다.
 
+## 화면으로 보기
+데모 페이지(`static/index.html`)를 실제로 사용하는 흐름이다. 사진을 고르고, 태그를 손보고, 문장을 생성·확정하고, 자연어로 검색하고, 내 문체를 등록하는 순서.
+
+| | |
+|---|---|
+| ![사진 그리드](docs/screenshots/01_photo_grid.png) **① 사진 그리드** — 완료/미작업 배지로 캡션이 있는 사진과 없는 사진을 구분한다. | ![태그·패널](docs/screenshots/02_panel_tags.png) **② 사진 선택** — 클릭하면 태그·생성 요청·캡션 편집 패널이 뜬다. |
+| ![태그 추가](docs/screenshots/03_tag_added.png) **③ 태그 편집** — 태그를 추가·삭제할 수 있다 (에이전트를 거치지 않는 앱 기능). | ![캡션 생성](docs/screenshots/04_caption_generated.png) **④ 문장 생성** — 제시된 요청 문구를 그대로 쓰거나 고쳐서 `generate_caption` 도구를 호출한다. |
+| ![캡션 확정](docs/screenshots/05_caption_confirmed.png) **⑤ 확정** — 생성된 문장을 직접 고친 뒤 확정하면 저장된다. | ![검색 결과](docs/screenshots/06_search_result.png) **⑥ 자연어 검색** — 태그·의미 기반 하이브리드 검색 결과를 사진과 함께 보여준다 (`contexts`·`trace`는 PoC라 그대로 노출). |
+| ![내 문체 등록](docs/screenshots/07_tone_registered.png) **⑦ 내 문체 등록** — 평소 쓰는 글 샘플을 등록해두면 "내가 등록한 톤으로"라고 말해서 그 문체로 캡션을 받을 수 있다. | |
+
 ## 활용한 패턴 (Day 1~7)
 - Day 1: LCEL chain (구조화 출력) — `POST /query` 응답을 `answer`/`contexts`/`trace` 로 구조화
 - Day 2: RAG — `src/embeddings.py`(Bedrock Titan Embed Text v2)로 태그·캡션을 임베딩해두고, `retriever.py`가 질의어와의 코사인 유사도(+키워드 보너스)로 상위 8건을 후보로 추려주면(임계값 방식은 짧은 질의에서 불안정해 폐기) 최종 관련성 판단은 에이전트가 함
