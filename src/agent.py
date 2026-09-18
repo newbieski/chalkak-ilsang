@@ -14,11 +14,20 @@ from pydantic import BaseModel
 
 from . import retriever
 from .model import build_chat_model
-from .tools import generate_caption, get_photo, index_photos, load_tones, search_photos, update_custom_tone_samples
+from .tools import (
+    generate_caption,
+    get_photo,
+    index_photos,
+    load_tones,
+    log_usage,
+    search_photos,
+    update_custom_tone_samples,
+)
 
 load_dotenv()
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
+
 
 def _system_prompt() -> str:
     """오늘 날짜를 포함한 시스템 프롬프트를 만든다.
@@ -85,8 +94,7 @@ def ask(question: str) -> dict:
             usage = message.usage_metadata or {}
             total_in += usage.get("input_tokens", 0)
             total_out += usage.get("output_tokens", 0)
-            model_name = (message.response_metadata or {}).get("model_name", "?")
-            print(f"[tokens] agent model={model_name} input={usage.get('input_tokens', 0)} output={usage.get('output_tokens', 0)}")
+            log_usage("agent", message)
         if isinstance(message, ToolMessage):
             content = message.content if isinstance(message.content, str) else str(message.content)
             trace.append({"step": message.name or "tool", "input": None, "output": content})

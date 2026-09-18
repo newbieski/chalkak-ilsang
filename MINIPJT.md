@@ -23,7 +23,7 @@
 
 ### Day 9 · 개발
 - [x] 실제 개발 (에이전트·도구·RAG·가드레일·트레이스 붙이기) — 구현 완료, 실제 Bedrock 호출 검증은 계정 하루 한도로 대기 중 (자세한 내용은 DEVPLAN.md·PROGRESS.md)
-- [ ] MCP 연동 (선택) — 미정, 생략 쪽으로 기울어 있음
+- [x] MCP 연동 (선택) — 생략하기로 확정 (마땅히 연동할 외부 도구가 없음)
 - [ ] test_queries.csv로 자체 평가 반복 (LLM-as-Judge·RAGAS 지표 산출) · 개선 사이클 — 채점 스크립트(`evaluation/run_eval.py`)는 완성, 실행은 Bedrock 한도 풀려야 가능
 - [ ] `evaluation/round1_report.md` 저장 — 위와 같은 이유로 대기
 - [ ] 강사 1:1 순회 리뷰 (인당 5~10분)

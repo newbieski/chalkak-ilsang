@@ -44,7 +44,7 @@ def _response_text(response) -> str:
     return "".join(parts).strip()
 
 
-def _log_usage(label: str, response) -> None:
+def log_usage(label: str, response) -> None:
     """모델 호출 하나의 입출력 토큰 수와 실제로 응답한 모델을 콘솔에 남긴다."""
     usage = response.usage_metadata or {}
     model_name = (response.response_metadata or {}).get("model_name", "?")
@@ -183,7 +183,7 @@ def index_photos(photo_ids: list[str] | None = None) -> str:
             results.append(f"{photo['id']}: 태그 생성 실패 ({error_code or exc})")
             continue
 
-        _log_usage(f"index_photos {photo['id']}", response)
+        log_usage(f"index_photos {photo['id']}", response)
         tags = [t.strip() for t in _response_text(response).split(",") if t.strip()]
         retriever.update_photo(photo["id"], tags=tags)
         retriever.reembed(photo["id"])  # 의미 검색용 임베딩 갱신
@@ -226,7 +226,7 @@ def generate_caption(photo_id: str, tone: str | None = None, length: str = "2문
         ]
     )
     response = _caption_model().invoke([message])
-    _log_usage(f"generate_caption {photo_id}", response)
+    log_usage(f"generate_caption {photo_id}", response)
     caption = _response_text(response)
 
     retriever.update_photo(photo_id, caption=caption, caption_tone=resolved_tone_id)
