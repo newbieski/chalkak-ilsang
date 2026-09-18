@@ -3,57 +3,133 @@
 <head>
 <meta charset="utf-8" />
 <title>찰칵일상 · 데모</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
-  h1 { font-size: 1.3rem; }
-  h2 { font-size: 1.05rem; margin-bottom: 0.25rem; }
-  #photos { display: flex; flex-wrap: wrap; gap: 8px; margin: 1rem 0; }
-  .photo-item { text-align: center; position: relative; width: 110px; }
-  .photo-item img { width: 110px; height: 110px; object-fit: cover; border: 3px solid transparent; border-radius: 6px; cursor: pointer; display: block; }
-  .photo-item img.selected { border-color: #2563eb; }
-  .photo-item .badge {
-    position: absolute; top: 4px; right: 4px; font-size: 0.7rem; padding: 1px 6px;
-    border-radius: 10px; color: #fff;
+  /* 디자인 토큰 — ui-ux-pro-max 스킬 "Soft UI Evolution" 결과 (DESIGN.md 참고) */
+  :root {
+    --color-primary: #92400E;
+    --color-secondary: #A16207;
+    --color-accent: #6366F1;
+    --color-on-accent: #FFFFFF;
+    --color-background: #FFFBEB;
+    --color-foreground: #0F172A;
+    --color-card: #FFFFFF;
+    --color-muted: #F8F3F0;
+    --color-muted-foreground: #475569;
+    --color-border: #F1E8E2;
+    --color-success: #16a34a;
+    --color-destructive: #DC2626;
+    --color-ring: #92400E;
+    --font-heading: 'Caveat', cursive;
+    --font-body: 'Quicksand', system-ui, sans-serif;
+    --radius: 14px;
+    --radius-sm: 10px;
+    --shadow-soft: 0 2px 10px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.05);
+    --transition: 200ms ease;
   }
-  .badge.done { background: #16a34a; }
-  .badge.todo { background: #9ca3af; }
-  .id-label { font-size: 0.7rem; color: #666; }
 
-  input[type="text"], textarea { width: 100%; padding: 0.5rem; font-size: 1rem; box-sizing: border-box; font-family: inherit; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: var(--font-body);
+    background: var(--color-background);
+    color: var(--color-foreground);
+    max-width: 900px; margin: 2rem auto; padding: 0 1rem;
+    line-height: 1.5;
+  }
+  h1 {
+    font-family: var(--font-heading); font-weight: 700; font-size: 2.4rem;
+    color: var(--color-primary); margin-bottom: 0.25rem;
+  }
+  h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.35rem; }
+  p { color: var(--color-muted-foreground); }
+
+  a { color: var(--color-accent); }
+
+  #photos { display: flex; flex-wrap: wrap; gap: 10px; margin: 1rem 0; }
+  .photo-item { text-align: center; position: relative; width: 110px; }
+  .photo-item img {
+    width: 110px; height: 110px; object-fit: cover; border-radius: var(--radius-sm);
+    cursor: pointer; display: block; box-shadow: var(--shadow-soft);
+    transition: box-shadow var(--transition), transform var(--transition);
+  }
+  .photo-item img:hover { transform: translateY(-2px); }
+  .photo-item img.selected { box-shadow: 0 0 0 3px var(--color-accent), var(--shadow-soft); }
+  .photo-item img:focus-visible { outline: 2px solid var(--color-ring); outline-offset: 2px; }
+  .photo-item .badge {
+    position: absolute; top: 6px; right: 6px; font-size: 0.7rem; padding: 2px 8px;
+    border-radius: 999px; color: #fff; font-weight: 600;
+  }
+  .badge.done { background: var(--color-success); }
+  .badge.todo { background: var(--color-muted-foreground); }
+  .id-label { font-size: 0.7rem; color: var(--color-muted-foreground); margin-top: 4px; }
+
+  input[type="text"], textarea {
+    width: 100%; padding: 0.6rem 0.75rem; font-size: 1rem; box-sizing: border-box;
+    font-family: inherit; color: var(--color-foreground); background: var(--color-card);
+    border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+  input[type="text"]:focus-visible, textarea:focus-visible {
+    outline: none; border-color: var(--color-ring); box-shadow: 0 0 0 3px rgba(146, 64, 14, 0.15);
+  }
   textarea { resize: vertical; }
-  button { padding: 0.5rem 1rem; margin-top: 0.5rem; cursor: pointer; }
-  label { display: block; margin-top: 0.75rem; font-size: 0.85rem; color: #444; }
+  button {
+    padding: 0.6rem 1.1rem; margin-top: 0.5rem; cursor: pointer; font-family: inherit;
+    font-size: 0.95rem; font-weight: 600; border: none; border-radius: var(--radius-sm);
+    background: var(--color-accent); color: var(--color-on-accent);
+    transition: filter var(--transition), transform var(--transition);
+  }
+  button:hover { filter: brightness(1.08); }
+  button:active { transform: translateY(1px); }
+  button:focus-visible { outline: 2px solid var(--color-ring); outline-offset: 2px; }
+  label { display: block; margin-top: 0.75rem; font-size: 0.85rem; color: var(--color-muted-foreground); font-weight: 600; }
 
-  #panel { margin-top: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; }
-  #panel-photo { max-width: 100%; max-height: 320px; display: block; margin: 0 auto 0.75rem; border-radius: 8px; }
+  #panel, #tone-section {
+    margin-top: 1.5rem; padding: 1.25rem; background: var(--color-card);
+    border: 1px solid var(--color-border); border-radius: var(--radius); box-shadow: var(--shadow-soft);
+  }
+  #panel-photo { max-width: 100%; max-height: 320px; display: block; margin: 0 auto 0.75rem; border-radius: var(--radius); box-shadow: var(--shadow-soft); }
   #panel-status { font-size: 0.9rem; }
-  #panel-status.done { color: #16a34a; }
-  #panel-status.todo { color: #6b7280; }
-  #panel-msg { font-size: 0.85rem; color: #2563eb; min-height: 1.2em; }
-  #deselect { background: none; border: 1px solid #ccc; }
+  #panel-status.done { color: var(--color-success); }
+  #panel-status.todo { color: var(--color-muted-foreground); }
+  #panel-msg { font-size: 0.85rem; color: var(--color-accent); min-height: 1.2em; font-weight: 600; }
+  #deselect { background: var(--color-card); color: var(--color-foreground); border: 1px solid var(--color-border); }
 
   #tags-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.4rem; min-height: 1.6rem; }
   .tag-chip {
-    display: inline-flex; align-items: center; gap: 4px; background: #e0e7ff; color: #3730a3;
-    border-radius: 12px; padding: 2px 8px 2px 10px; font-size: 0.85rem;
+    display: inline-flex; align-items: center; gap: 4px; background: var(--color-muted); color: var(--color-primary);
+    border-radius: 999px; padding: 3px 8px 3px 12px; font-size: 0.85rem; font-weight: 500;
   }
-  .tag-chip button { margin: 0; padding: 0 2px; background: none; border: none; color: #3730a3; font-weight: bold; cursor: pointer; }
+  .tag-chip button { margin: 0; padding: 0 2px; background: none; border: none; color: var(--color-primary); font-weight: bold; cursor: pointer; }
+  .tag-chip button:hover { filter: none; color: var(--color-destructive); }
   .tag-add-row { display: flex; gap: 6px; margin-top: 0.4rem; }
   .tag-add-row input { flex: 1; }
   .tag-add-row button { margin-top: 0; white-space: nowrap; }
 
-  #tone-section { margin-top: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; }
   #tone-samples-list { margin-top: 0.4rem; }
-  .tone-sample-row { display: flex; align-items: flex-start; gap: 6px; padding: 6px 0; border-bottom: 1px solid #e5e7eb; }
+  .tone-sample-row { display: flex; align-items: flex-start; gap: 6px; padding: 8px 0; border-bottom: 1px solid var(--color-border); }
   .tone-sample-row span { flex: 1; font-size: 0.9rem; }
-  .tone-sample-row button { margin: 0; background: none; border: none; color: #dc2626; cursor: pointer; font-size: 0.85rem; }
-  #tone-section p.hint { font-size: 0.85rem; color: #555; margin: 0.25rem 0 0; }
+  .tone-sample-row button { margin: 0; background: none; border: none; color: var(--color-destructive); cursor: pointer; font-size: 0.85rem; font-weight: 500; }
+  .tone-sample-row button:hover { filter: none; text-decoration: underline; }
+  #tone-section p.hint { font-size: 0.85rem; color: var(--color-muted-foreground); margin: 0.25rem 0 0; }
 
   #general { margin-top: 1.5rem; }
-  #selected-info { color: #2563eb; font-size: 0.9rem; min-height: 1.2em; }
+  #selected-info { color: var(--color-accent); font-size: 0.9rem; min-height: 1.2em; font-weight: 600; }
   #result { margin-top: 1rem; }
-  #result pre { background: #f5f5f5; padding: 0.75rem; border-radius: 6px; white-space: pre-wrap; word-break: break-word; }
-  #answer { font-size: 1.05rem; padding: 0.75rem; background: #eef6ff; border-radius: 6px; }
+  #result pre {
+    background: var(--color-muted); color: var(--color-foreground); padding: 0.75rem;
+    border-radius: var(--radius-sm); white-space: pre-wrap; word-break: break-word;
+  }
+  #answer {
+    font-size: 1.05rem; padding: 0.9rem 1rem; background: var(--color-muted);
+    border-left: 3px solid var(--color-accent); border-radius: var(--radius-sm);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -61,7 +137,7 @@
   <p>사진을 클릭하면 문장(캡션) 생성·수정 화면이 뜹니다. 초록 배지는 이미 문장이 있는 사진입니다.</p>
 
   <button id="sync-photos">새 사진 불러오기</button>
-  <span id="sync-msg" style="font-size:0.85rem; color:#2563eb; margin-left:8px;"></span>
+  <span id="sync-msg" style="font-size:0.85rem; color:var(--color-accent); margin-left:8px;"></span>
 
   <div id="photos">불러오는 중...</div>
 
@@ -147,8 +223,14 @@ function renderPhotos() {
 
     const img = document.createElement('img');
     img.src = `/data/${p.filename}`;
+    img.alt = p.caption || `사진 ${p.id}`;
+    img.tabIndex = 0;
+    img.setAttribute('role', 'button');
     if (p.id === selectedId) img.classList.add('selected');
     img.onclick = () => selectPhoto(p.id);
+    img.onkeydown = e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectPhoto(p.id); }
+    };
 
     const badge = document.createElement('span');
     const done = !!p.caption;
@@ -209,7 +291,7 @@ function renderTags() {
     container.appendChild(chip);
   });
   if (!(photo.tags || []).length) {
-    container.innerHTML = '<span style="color:#9ca3af; font-size:0.85rem;">태그 없음</span>';
+    container.innerHTML = '<span style="color:var(--color-muted-foreground); font-size:0.85rem;">태그 없음</span>';
   }
 }
 
@@ -315,8 +397,8 @@ async function sendGeneralQuery() {
       .filter(id => photosById[id])
       .map(id => `
         <div style="display:inline-block; text-align:center; margin: 0 8px 8px 0;">
-          <img src="/data/${photosById[id].filename}" style="width:100px; height:100px; object-fit:cover; border-radius:6px; display:block;" />
-          <span style="font-size:0.7rem; color:#666;">${id}</span>
+          <img src="/data/${photosById[id].filename}" alt="${photosById[id].caption || id}" style="width:100px; height:100px; object-fit:cover; border-radius:10px; box-shadow:var(--shadow-soft); display:block;" />
+          <span style="font-size:0.7rem; color:var(--color-muted-foreground);">${id}</span>
         </div>
       `)
       .join('');
@@ -330,7 +412,7 @@ async function sendGeneralQuery() {
       <pre>${JSON.stringify(data.trace ?? [], null, 2)}</pre>
     `;
   } catch (err) {
-    resultEl.innerHTML = `<p style="color:red">요청 실패: ${err}</p>`;
+    resultEl.innerHTML = `<p style="color:var(--color-destructive)">요청 실패: ${err}</p>`;
   }
 }
 
@@ -359,7 +441,7 @@ function renderToneSamples() {
   const container = document.getElementById('tone-samples-list');
   container.innerHTML = '';
   if (!toneSamples.length) {
-    container.innerHTML = '<span style="color:#9ca3af; font-size:0.85rem;">등록된 샘플 없음 — 등록 전까지는 기본 톤으로 처리됩니다.</span>';
+    container.innerHTML = '<span style="color:var(--color-muted-foreground); font-size:0.85rem;">등록된 샘플 없음 — 등록 전까지는 기본 톤으로 처리됩니다.</span>';
     return;
   }
   toneSamples.forEach((sample, idx) => {
