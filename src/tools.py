@@ -9,15 +9,39 @@ from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
 
 from . import retriever
-from .model import build_chat_model
+from .model import build_caption_model, build_chat_model
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 TONES_PATH = DATA_DIR / "tones.json"
 
 
 def _vision_model():
-    """이미지를 보는 도구들이 공용으로 쓰는 Bedrock 모델을 만든다. 스로틀링 시 대체 모델로 자동 전환."""
+    """태깅(index_photos)이 쓰는 Bedrock 모델을 만든다. 스로틀링 시 대체 모델로 자동 전환."""
     return build_chat_model(temperature=0)
+
+
+def _caption_model():
+    """캡션 생성(generate_caption)이 쓰는 모델을 만든다. CAPTION_LLM_PROVIDER로 Bedrock/Gemini 선택."""
+    return build_caption_model(temperature=0)
+
+
+def _response_text(response) -> str:
+    """모델 응답에서 순수 텍스트만 뽑아낸다.
+
+    Bedrock은 response.content가 그냥 문자열이지만, Gemini는 [{"type": "text", "text": ...},
+    {"extras": {"signature": ...}}] 같은 content-block 리스트를 돌려준다. str()로 그대로
+    문자열화하면 서명 등 부가 데이터까지 캡션에 섞여 들어가므로, text 블록만 골라 이어붙인다.
+    """
+    content = response.content
+    if isinstance(content, str):
+        return content.strip()
+    parts = []
+    for block in content:
+        if isinstance(block, str):
+            parts.append(block)
+        elif isinstance(block, dict) and block.get("type") == "text":
+            parts.append(block.get("text", ""))
+    return "".join(parts).strip()
 
 
 def _log_usage(label: str, response) -> None:
@@ -160,7 +184,7 @@ def index_photos(photo_ids: list[str] | None = None) -> str:
             continue
 
         _log_usage(f"index_photos {photo['id']}", response)
-        tags = [t.strip() for t in str(response.content).split(",") if t.strip()]
+        tags = [t.strip() for t in _response_text(response).split(",") if t.strip()]
         retriever.update_photo(photo["id"], tags=tags)
         retriever.reembed(photo["id"])  # 의미 검색용 임베딩 갱신
         results.append(f"{photo['id']}: {', '.join(tags)}")
@@ -201,9 +225,9 @@ def generate_caption(photo_id: str, tone: str | None = None, length: str = "2문
             {"type": "image_url", "image_url": {"url": data_url}},
         ]
     )
-    response = _vision_model().invoke([message])
+    response = _caption_model().invoke([message])
     _log_usage(f"generate_caption {photo_id}", response)
-    caption = str(response.content).strip()
+    caption = _response_text(response)
 
     retriever.update_photo(photo_id, caption=caption, caption_tone=resolved_tone_id)
     retriever.reembed(photo_id)  # 의미 검색용 임베딩 갱신

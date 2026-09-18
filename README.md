@@ -232,6 +232,15 @@ python -m src.agent "작년 여름 제주도 사진 보여줘"
 ```
 `run.sh` 도 위 과정을 그대로 수행한다. 서버 실행 후 브라우저로 `http://localhost:8000/` 에 접속하면 사진 목록·선택·요청 입력이 되는 데모 페이지(`static/index.html`, PoC 수준)가 뜬다.
 
+### 캡션 생성을 Gemini로 돌리기 (선택)
+기본은 전부 Bedrock이다. 캡션 생성(`generate_caption`)만 Google Gemini로 바꾸고 싶으면 `.env`에 아래 세 값을 채운다.
+```bash
+CAPTION_LLM_PROVIDER=gemini      # 기본값 bedrock. 안 건드리면 기존과 동일하게 동작
+GEMINI_MODEL_ID=gemini-2.5-flash
+GEMINI_API_KEY=발급받은_키
+```
+에이전트 오케스트레이션(도구 선택·최종 응답 조립)과 사진 태깅(`index_photos`), RAG 임베딩은 이 설정과 무관하게 항상 Bedrock을 쓴다 — "문장 생성만 Gemini로 대체"하는 용도다.
+
 ## RAGAS 평가 결과
 _(Day9 자체 평가 진행 후 채움)_
 - context_recall:
@@ -251,9 +260,11 @@ _(진행하며 채워나감 — 자세한 경위는 PROGRESS.md 참고)_
 - "샘플 사진은 풍경 위주로만" 결정을 한 번 내렸다가, SERVICE.md의 가드레일 정책(인물·GPS 감지 시 경고)과 앞뒤가 안 맞아 되돌림
 - Bedrock은 계정 전체가 아니라 **모델별로** 사용량 한도가 있어, 기본 모델이 스로틀링되면 대체 모델 목록으로 자동 전환하도록 함 (`src/model.py`)
 - `data/photos.json`의 `location`(예: "제주 협재해변") 값이 실제 사진 내용과 무관한 옛 더미 데이터였는데, 그걸 그대로 캡션 프롬프트에 "참고 정보"로 넣어 근거 없는 사실을 캡션에 반영하는 문제가 있었음 — 위치 메타데이터를 전부 제거하고, "메타데이터가 있다고 사실처럼 반영하지 않는다"는 원칙을 SERVICE.md·프롬프트에 명문화
+- 캡션 생성만 Gemini로 바꿔봤더니 결과 캡션에 알아볼 수 없는 긴 문자열이 섞여 나옴 — `ChatBedrockConverse`의 `response.content`는 순수 문자열이지만 `ChatGoogleGenerativeAI`는 `[{"type": "text", "text": ...}, {"extras": {"signature": ...}}]` 형태의 content-block 리스트를 돌려주는데, 기존 코드가 `str(response.content)`로 그대로 문자열화해 서명 데이터까지 캡션에 섞여 들어갔던 것 — text 블록만 골라 뽑는 `_response_text()` 헬퍼로 교체 (`src/tools.py`)
 
 ## 핵심 코드 위치
-- `src/model.py:21` — `build_chat_model()`: 기본 모델 실패 시 후보 목록으로 자동 전환하는 모델 생성 (`with_fallbacks`)
+- `src/model.py` — `build_chat_model()`: 에이전트·태깅용 Bedrock 모델 생성, 기본 모델 실패 시 후보 목록으로 자동 전환 (`with_fallbacks`). `build_caption_model()`: 캡션 생성 전용, `.env`의 `CAPTION_LLM_PROVIDER`로 Bedrock/Gemini 선택
+- `src/tools.py` — `_response_text()`: 모델 응답에서 텍스트만 안전하게 추출 (Bedrock은 문자열, Gemini는 content-block 리스트라 형태가 다름)
 - `src/agent.py:23` — `_system_prompt()`: 가드레일 + 오늘 날짜(상대 날짜 표현 계산용) 포함한 시스템 프롬프트
 - `src/agent.py:43` — `_build_agent()`: 4개 도구를 묶은 에이전트 생성
 - `src/agent.py:53` — `_parse_question()`: `photo_id::요청` 파싱

@@ -2,7 +2,7 @@
 
 ## 기술 스택
 - Python, LangChain, LangGraph
-- 모델은 Amazon Bedrock (ChatBedrockConverse)
+- 모델은 Amazon Bedrock (ChatBedrockConverse). 캡션 생성(generate_caption)만 .env의 CAPTION_LLM_PROVIDER로 Google Gemini도 선택 가능
 - Agent 생성은 langchain.agents 의 create_agent 를 쓴다
 - 패키지는 항상 가상환경(.venv)에 설치한다. 전역 파이썬에 pip install 하지 않는다
 
