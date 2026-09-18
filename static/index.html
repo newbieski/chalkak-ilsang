@@ -183,11 +183,6 @@ button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2p
 
 #selected-info { color: var(--color-accent); font-size: 0.9375rem; min-height: 1.2em; font-weight: 500; margin-bottom: var(--space-sm); }
 #result { margin-top: var(--space-lg); }
-#result pre {
-  background: var(--color-paper-2); color: var(--color-ink-2); padding: var(--space-md);
-  border-radius: var(--radius-sm); white-space: pre-wrap; word-break: break-word; font-size: 0.8125rem;
-  border: 1px solid var(--color-rule-2);
-}
 #answer { font-size: 1.0625rem; padding-left: var(--space-md); border-left: 3px solid var(--color-accent); color: var(--color-ink); }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
@@ -482,13 +477,12 @@ async function sendGeneralQuery() {
       `)
       .join('');
 
+    // contexts/trace는 화면에 노출하지 않고 콘솔 로그로만 남긴다 (근거 확인용, 개발자 도구에서만 확인)
+    console.log('[query] contexts', data.contexts, 'trace', data.trace);
+
     resultEl.innerHTML = `
       <div id="answer"><strong>answer</strong><br>${data.answer ?? ''}</div>
       ${thumbsHtml ? `<div style="margin-top:0.75rem;">${thumbsHtml}</div>` : ''}
-      <p><strong>contexts</strong></p>
-      <pre>${JSON.stringify(data.contexts ?? [], null, 2)}</pre>
-      <p><strong>trace</strong></p>
-      <pre>${JSON.stringify(data.trace ?? [], null, 2)}</pre>
     `;
   } catch (err) {
     resultEl.innerHTML = `<p style="color:var(--color-danger)">요청 실패: ${err}</p>`;
