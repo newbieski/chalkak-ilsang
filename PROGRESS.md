@@ -154,3 +154,11 @@ Day8에 "샘플 사진은 풍경 위주로만"이라고 정했던 건, 인물 �
 - `evaluation/test_queries.csv` 18·19번 guardrail 문항을 원래 취지(인물 신원 추정 차단, 위치 정보 노출 차단)로 복원
 - **사진 원본 파일은 git에 올리지 않기로 함** — 라이선스·초상권 문제를 피하려고 로컬 테스트 전용으로 두고, `data/photos.json`·`data/tones.json` 같은 메타데이터만 커밋한다. `.gitignore`에 `data/*.jpg` 등 등록
 - SERVICE.md 3번 데이터 설명에서 "풍경 위주" 문구 제거, 사진 파일이 로컬 전용이라는 점 명시
+
+## Day 10 · 2026-09-18
+
+### UI 리디자인 1차 시도(ui-ux-pro-max 스킬) 보류
+`ui-ux-pro-max` 스킬로 디자인 시스템(웜 브라운·인디고 액센트, Caveat/Quicksand 타이포그래피, Soft UI Evolution 스타일)을 생성해 `static/index.html`에 적용하고, 이어서 app-shell 카드 구조·CSS grid 사진 그리드까지 다듬었다. 실사용 확인 결과 "특별히 바뀌었다는 느낌이 없다"는 평가를 받아 이 시도는 보류하기로 함.
+- 작업 전체(디자인 시스템 적용 + 구조 개선)를 `design/ui-ux-pro-max-v1` 브랜치에 그대로 보존
+- main의 `static/index.html`은 시도 이전 상태로 원복
+- `DESIGN.md`는 이번 시도 때 처음 만든 파일이라 main에는 원래 없던 파일이었음 — main에서는 삭제하고 해당 브랜치에만 남김. 다른 방식으로 UI 작업을 다시 시도할 예정
