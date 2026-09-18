@@ -11,3 +11,4 @@ https://app.emergent.sh/landing/
 ORCA 앱
 PASEO
 ASIDE
+ego lite
