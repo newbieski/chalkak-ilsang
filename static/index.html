@@ -31,7 +31,7 @@
   --font-body: "Switzer", ui-sans-serif, system-ui, sans-serif;
 
   --space-3xs: 0.125rem; --space-2xs: 0.25rem; --space-xs: 0.5rem; --space-sm: 0.75rem;
-  --space-md: 1rem; --space-lg: 1.5rem; --space-xl: 2.5rem; --space-2xl: 4rem; --space-3xl: 6rem;
+  --space-md: 1rem; --space-lg: 1.5rem; --space-xl: 2rem; --space-2xl: 3rem; --space-3xl: 4rem;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -46,14 +46,17 @@ body { overflow-x: clip; }
 body {
   font-family: var(--font-body);
   font-weight: 400;
-  background: var(--color-paper);
+  background:
+    radial-gradient(ellipse 120% 90% at 12% -10%, oklch(97% 0.014 75 / 0.6), transparent 55%),
+    radial-gradient(ellipse 100% 80% at 100% 110%, oklch(89% 0.016 65 / 0.5), transparent 55%),
+    var(--color-paper);
+  background-attachment: fixed;
   color: var(--color-ink);
   line-height: 1.6;
-  margin: 0;
-  padding: var(--space-2xl) var(--space-lg) var(--space-3xl) clamp(var(--space-lg), 6vw, var(--space-3xl));
-  max-width: 46rem;
+  margin: 0 auto;
+  padding: var(--space-2xl) var(--space-lg) var(--space-3xl);
+  max-width: 40rem;
 }
-@media (min-width: 900px) { body { margin-left: 4vw; } }
 
 h1 {
   font-family: var(--font-display); font-style: normal; font-weight: 600;
@@ -63,9 +66,18 @@ h1 {
 h2 {
   font-family: var(--font-display); font-style: normal; font-weight: 600;
   font-size: 1.25rem; color: var(--color-ink); margin: 0 0 var(--space-sm); overflow-wrap: anywhere;
+  display: flex; align-items: center; gap: var(--space-xs);
+}
+h2::before {
+  content: ""; display: inline-block; width: 7px; height: 7px; flex: none;
+  background: var(--color-accent); border-radius: 1px; transform: rotate(45deg);
 }
 p { color: var(--color-ink-2); margin: 0 0 var(--space-md); max-width: 62ch; }
-header.intro { margin-bottom: var(--space-xl); }
+header.intro { margin-bottom: var(--space-lg); }
+.dateline {
+  font-size: 0.75rem; font-weight: 500; letter-spacing: 0.04em; color: var(--color-muted);
+  margin: 0 0 var(--space-xs);
+}
 h1 .eyebrow {
   display: inline-block; font-family: var(--font-body); font-weight: 500; font-size: 0.75rem;
   letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-muted);
@@ -109,26 +121,36 @@ button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2p
 #deselect:hover, #add-tag:hover, #add-tone-sample:hover { background: var(--color-paper-2); color: var(--color-ink); }
 
 #photos {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: var(--space-sm) var(--space-xs); margin: var(--space-lg) 0 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  gap: var(--space-md) var(--space-sm); margin: var(--space-lg) 0 0;
 }
-.photo-item { position: relative; min-width: 0; }
+.photo-item {
+  position: relative; min-width: 0;
+  background: var(--color-paper); padding: var(--space-2xs) var(--space-2xs) var(--space-xs);
+  border-radius: var(--radius-sm); box-shadow: 0 1px 3px oklch(20% 0.01 60 / 0.12);
+  transition: transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out);
+}
+.photo-item:nth-child(3n+1) { transform: rotate(-0.6deg); }
+.photo-item:nth-child(3n+2) { transform: rotate(0.7deg); }
+.photo-item:nth-child(3n) { transform: rotate(-0.3deg); }
+.photo-item:hover, .photo-item:focus-within {
+  transform: rotate(0deg) translateY(-3px);
+  box-shadow: 0 8px 18px oklch(20% 0.01 60 / 0.18);
+}
 .photo-item img {
-  width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: var(--radius-sm);
+  width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 2px;
   display: block; cursor: pointer; filter: saturate(0.97);
-  transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
 }
-.photo-item img:hover { transform: translateY(-2px); box-shadow: 0 4px 14px oklch(20% 0.01 60 / 0.16); }
-.photo-item img.selected { box-shadow: 0 0 0 2px var(--color-paper), 0 0 0 4px var(--color-accent); }
-.photo-item img:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+.photo-item img.selected { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.photo-item img:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 .photo-item .badge {
-  position: absolute; top: var(--space-2xs); right: var(--space-2xs);
+  position: absolute; top: var(--space-sm); right: var(--space-sm);
   font-size: 0.625rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
   padding: 2px 6px; border-radius: 3px; color: var(--color-paper);
 }
 .badge.done { background: oklch(44% 0.12 145); }
 .badge.todo { background: oklch(42% 0.012 60); }
-.id-label { font-size: 0.6875rem; color: var(--color-muted); margin-top: var(--space-3xs); }
+.id-label { font-size: 0.6875rem; color: var(--color-muted); margin-top: var(--space-2xs); text-align: center; }
 
 #panel, #tone-section, #general { margin-top: var(--space-2xl); }
 #panel-photo {
@@ -171,13 +193,14 @@ button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2p
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
 @media (max-width: 480px) {
-  body { padding-left: var(--space-md); padding-right: var(--space-md); margin-left: 0; }
-  #photos { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+  body { padding-left: var(--space-md); padding-right: var(--space-md); }
+  #photos { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
 }
 </style>
 </head>
 <body>
   <header class="intro">
+    <p class="dateline" id="dateline"></p>
     <h1>찰칵일상 <span class="eyebrow">데모 · PoC</span></h1>
     <p>사진을 클릭하면 문장(캡션) 생성·수정 화면이 뜹니다. 초록 배지는 이미 문장이 있는 사진입니다.</p>
   </header>
@@ -241,6 +264,10 @@ button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2p
 let photosById = {};
 let selectedId = null;
 const DEFAULT_GUIDE = '2문장으로, 담백한 사실 설명 톤으로 써줘';
+
+document.getElementById('dateline').textContent = new Date().toLocaleDateString('ko-KR', {
+  year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
+});
 
 async function loadPhotos() {
   const res = await fetch('/data/photos.json');
