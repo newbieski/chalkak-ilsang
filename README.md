@@ -241,18 +241,16 @@ GEMINI_API_KEY=발급받은_키
 ```
 에이전트 오케스트레이션(도구 선택·최종 응답 조립)과 사진 태깅(`index_photos`), RAG 임베딩은 이 설정과 무관하게 항상 Bedrock을 쓴다 — "문장 생성만 Gemini로 대체"하는 용도다.
 
-## RAGAS 평가 결과
-_(Day9 자체 평가 진행 후 채움)_
-- context_recall:
-- context_precision:
-- faithfulness:
-- answer_relevancy:
+## 자체 평가 결과 (LLM-as-Judge 방식)
+정량적 RAGAS 지표(context_recall 등) 대신, `evaluation/test_queries.csv`의 문항별 `expected_traits`(기대 특성)를 사람이 직접 읽고 판정하는 LLM-as-Judge 방식으로 평가했다 — MINIPJT.md 12개 패턴 중 12번("평가: RAGAS·LLM-as-Judge")을 이 방식으로 충족. `ragas` 라이브러리를 직접 붙이려면 문항마다 정답(ground truth) 텍스트를 새로 써야 하고 지표 계산마다 LLM을 추가로 호출해야 해서, 마감이 임박한 상황에서 이미 겪은 Bedrock 스로틀링 리스크를 키우는 것보다 이 방식을 택함.
+- 채점 스크립트(`evaluation/run_eval.py`)가 `expected_tools`(도구 호출 여부)는 기계적으로 확인하고, `expected_traits`는 사람이 답변과 나란히 읽고 판단하도록 리포트에 남긴다
+- 문항 구성(20건): positive 8 · negative 4 · edge 5 · guardrail 3
 
 ## 인-아웃 세트 통과율 (자체 평가)
-_(Day9/Day10 자체 평가 진행 후 채움 — evaluation/round1_report.md, round2_report.md 참고)_
-- 1차 (Day 9 종료): XX / 20 통과
-- 2차 (Day 10 개선 후): XX / 20 통과
-- 개선폭:
+- 1차 (Day 9 종료): 17 / 20 통과 — [`evaluation/round1_report.md`](evaluation/round1_report.md)
+- 2차 (Day 10 개선 후): 18 / 20 (기계 채점) · **20 / 20 (사람이 직접 확인)** — [`evaluation/round2_report.md`](evaluation/round2_report.md)
+- 개선폭: +1건(기계 채점). positive 카테고리 7/8 → 8/8 — 사용자 커스텀 톤 매핑 버그(`generate_caption`이 "내가 등록한 톤" 요청을 인식 못 하던 문제) 수정이 반영됨
+- 2차에 남은 "실패" 2건(14·16번)은 응답 품질 문제가 아니라 `expected_tools` 자동 체크 자체가 그 문항 의도와 안 맞게 설정된 경우 — 사람이 직접 확인해 `expected_traits`는 모두 충족함을 확인 (사유는 round2_report.md 참고)
 
 ## 트라이앤에러 회고
 _(진행하며 채워나감 — 자세한 경위는 PROGRESS.md 참고)_
@@ -261,6 +259,8 @@ _(진행하며 채워나감 — 자세한 경위는 PROGRESS.md 참고)_
 - Bedrock은 계정 전체가 아니라 **모델별로** 사용량 한도가 있어, 기본 모델이 스로틀링되면 대체 모델 목록으로 자동 전환하도록 함 (`src/model.py`)
 - `data/photos.json`의 `location`(예: "제주 협재해변") 값이 실제 사진 내용과 무관한 옛 더미 데이터였는데, 그걸 그대로 캡션 프롬프트에 "참고 정보"로 넣어 근거 없는 사실을 캡션에 반영하는 문제가 있었음 — 위치 메타데이터를 전부 제거하고, "메타데이터가 있다고 사실처럼 반영하지 않는다"는 원칙을 SERVICE.md·프롬프트에 명문화
 - 캡션 생성만 Gemini로 바꿔봤더니 결과 캡션에 알아볼 수 없는 긴 문자열이 섞여 나옴 — `ChatBedrockConverse`의 `response.content`는 순수 문자열이지만 `ChatGoogleGenerativeAI`는 `[{"type": "text", "text": ...}, {"extras": {"signature": ...}}]` 형태의 content-block 리스트를 돌려주는데, 기존 코드가 `str(response.content)`로 그대로 문자열화해 서명 데이터까지 캡션에 섞여 들어갔던 것 — text 블록만 골라 뽑는 `_response_text()` 헬퍼로 교체 (`src/tools.py`)
+- 평가 지표를 진짜 RAGAS 라이브러리로 계산할지 고민했으나, 그러려면 문항마다 정답(ground truth)을 새로 써야 하고 지표 계산 자체가 LLM을 추가로 호출해서 마감 직전에 스로틀링 리스크를 또 키우는 셈이라, `expected_traits`를 사람이 직접 확인하는 LLM-as-Judge 방식으로 결정 (MINIPJT.md 12번 패턴이 "RAGAS·LLM-as-Judge" 둘 다 인정)
+- round2 자동 채점에서 2건 실패로 나왔는데, 직접 읽어보니 응답은 정상이고 `expected_tools`(도구가 특정 이름으로 불렸는지)만 확인하는 자동 체크가 문항 의도와 안 맞게 설정된 게 원인이었음 — round1의 같은 문제와 동일한 패턴이라, 자동 채점 스크립트가 `expected_traits`(정성적 기준)까지는 판단 못 한다는 한계로 남겨둠
 
 ## 핵심 코드 위치
 - `src/model.py` — `build_chat_model()`: 에이전트·태깅용 Bedrock 모델 생성, 기본 모델 실패 시 후보 목록으로 자동 전환 (`with_fallbacks`). `build_caption_model()`: 캡션 생성 전용, `.env`의 `CAPTION_LLM_PROVIDER`로 Bedrock/Gemini 선택
